@@ -11,7 +11,7 @@ func RunMigrations(runDownMigrations bool) error {
 	if err != nil {
 		return err
 	}
-	driver, err := postgres.WithInstance(db.DB.DB, &postgres.Config{})
+	driver, err := postgres.WithInstance(db.ItemQueries.DB.DB, &postgres.Config{})
 	if err != nil {
 		return err
 	}

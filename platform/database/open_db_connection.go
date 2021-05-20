@@ -4,6 +4,7 @@ import "ShoppingList-Backend/app/queries"
 
 type Queries struct {
 	*queries.ItemQueries
+	*queries.ListQueries
 }
 
 func OpenDBConnection() (*Queries, error) {
@@ -14,5 +15,6 @@ func OpenDBConnection() (*Queries, error) {
 
 	return &Queries{
 		ItemQueries: &queries.ItemQueries{DB: db},
+		ListQueries: &queries.ListQueries{DB: db},
 	}, nil
 }

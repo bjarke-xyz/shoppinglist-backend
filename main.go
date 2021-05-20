@@ -13,6 +13,9 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 
 	err := godotenv.Load()
