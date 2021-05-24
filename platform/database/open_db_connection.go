@@ -1,10 +1,13 @@
 package database
 
-import "ShoppingList-Backend/app/queries"
+import (
+	"ShoppingList-Backend/app/item"
+	"ShoppingList-Backend/app/list"
+)
 
 type Queries struct {
-	*queries.ItemQueries
-	*queries.ListQueries
+	*item.ItemQueries
+	*list.ListQueries
 }
 
 func OpenDBConnection() (*Queries, error) {
@@ -14,7 +17,7 @@ func OpenDBConnection() (*Queries, error) {
 	}
 
 	return &Queries{
-		ItemQueries: &queries.ItemQueries{DB: db},
-		ListQueries: &queries.ListQueries{DB: db},
+		ItemQueries: &item.ItemQueries{DB: db},
+		ListQueries: &list.ListQueries{DB: db},
 	}, nil
 }

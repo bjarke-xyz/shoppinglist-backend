@@ -1,4 +1,4 @@
-package utils
+package server
 
 import (
 	"log"
@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func StartServerWithGracefulShutdown(a *fiber.App) {
+func StartWithGracefulShutdown(a *fiber.App) {
 	idleConnsClosed := make(chan struct{})
 
 	go func() {
@@ -25,8 +25,13 @@ func StartServerWithGracefulShutdown(a *fiber.App) {
 	}()
 }
 
-func StartServer(a *fiber.App) {
+func Start(a *fiber.App) {
 	if err := a.Listen(os.Getenv("SERVER_URL")); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)
 	}
+}
+
+type HTTPError struct {
+	Status int    `json:"status"`
+	Error  string `json:"error"`
 }

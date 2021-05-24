@@ -16,7 +16,7 @@ func PostgreSQLConnection() (*sqlx.DB, error) {
 	maxIdleConn, _ := strconv.Atoi(os.Getenv("DB_MAX_IDLE_CONNECTIONS"))
 	// maxLifetimeConn, _ := strconv.Atoi(os.Getenv("DB_MAX_LIFETIME_CONNECTIONS"))
 
-	db, err := sqlx.Connect("pgx", os.Getenv("DB_SERVER_URL"))
+	db, err := sqlx.Connect("pgx", os.Getenv("DB_SERVER"))
 	if err != nil {
 		return nil, fmt.Errorf("error, not connected to database, %w", err)
 	}

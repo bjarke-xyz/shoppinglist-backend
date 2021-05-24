@@ -1,24 +1,10 @@
 definitions:
-  models.AddItem:
+  item.AddItem:
     properties:
       name:
         type: string
     type: object
-  models.AddList:
-    properties:
-      isDefault:
-        type: boolean
-      name:
-        type: string
-    type: object
-  models.HTTPError:
-    properties:
-      error:
-        type: string
-      status:
-        type: integer
-    type: object
-  models.Item:
+  item.Item:
     properties:
       createdAt:
         type: string
@@ -35,19 +21,42 @@ definitions:
     required:
     - id
     type: object
-  models.ItemResponse:
+  item.ItemResponse:
     properties:
       data:
-        $ref: '#/definitions/models.Item'
+        $ref: '#/definitions/item.Item'
     type: object
-  models.ItemsResponse:
+  item.ItemsResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/models.Item'
+          $ref: '#/definitions/item.Item'
         type: array
     type: object
-  models.List:
+  list.AddList:
+    properties:
+      name:
+        type: string
+    type: object
+  list.DefaultList:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      listId:
+        type: string
+      updatedAt:
+        type: string
+      userId:
+        type: string
+    type: object
+  list.DefaultListResponse:
+    properties:
+      data:
+        $ref: '#/definitions/list.DefaultList'
+    type: object
+  list.List:
     properties:
       createdAt:
         type: string
@@ -55,11 +64,9 @@ definitions:
         type: string
       id:
         type: string
-      isDefault:
-        type: boolean
       items:
         items:
-          $ref: '#/definitions/models.ListItem'
+          $ref: '#/definitions/list.ListItem'
         type: array
       name:
         type: string
@@ -70,7 +77,7 @@ definitions:
     required:
     - id
     type: object
-  models.ListItem:
+  list.ListItem:
     properties:
       createdAt:
         type: string
@@ -79,7 +86,7 @@ definitions:
       id:
         type: string
       item:
-        $ref: '#/definitions/models.Item'
+        $ref: '#/definitions/item.Item'
       itemId:
         type: string
       listId:
@@ -87,27 +94,34 @@ definitions:
       updatedAt:
         type: string
     type: object
-  models.ListItemResponse:
+  list.ListItemResponse:
     properties:
       data:
-        $ref: '#/definitions/models.ListItem'
+        $ref: '#/definitions/list.ListItem'
     type: object
-  models.ListResponse:
+  list.ListResponse:
     properties:
       data:
-        $ref: '#/definitions/models.List'
+        $ref: '#/definitions/list.List'
     type: object
-  models.ListsResponse:
+  list.ListsResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/models.List'
+          $ref: '#/definitions/list.List'
         type: array
     type: object
-  models.UpdateListItem:
+  list.UpdateListItem:
     properties:
       crossed:
         type: boolean
+    type: object
+  server.HTTPError:
+    properties:
+      error:
+        type: string
+      status:
+        type: integer
     type: object
 info:
   contact: {}
@@ -123,15 +137,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ItemsResponse'
+            $ref: '#/definitions/item.ItemsResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: get all items for user
@@ -147,22 +161,22 @@ paths:
         name: item
         required: true
         schema:
-          $ref: '#/definitions/models.AddItem'
+          $ref: '#/definitions/item.AddItem'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ItemResponse'
+            $ref: '#/definitions/item.ItemResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: Create new item
@@ -189,11 +203,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: Delete item
@@ -214,26 +228,26 @@ paths:
         name: item
         required: true
         schema:
-          $ref: '#/definitions/models.AddItem'
+          $ref: '#/definitions/item.AddItem'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ItemResponse'
+            $ref: '#/definitions/item.ItemResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: Update item
@@ -250,15 +264,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ListsResponse'
+            $ref: '#/definitions/list.ListsResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: get all lists for user
@@ -274,22 +288,22 @@ paths:
         name: list
         required: true
         schema:
-          $ref: '#/definitions/models.AddList'
+          $ref: '#/definitions/list.AddList'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ListResponse'
+            $ref: '#/definitions/list.ListResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: Create new list
@@ -316,11 +330,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: Delete list
@@ -341,29 +355,64 @@ paths:
         name: list
         required: true
         schema:
-          $ref: '#/definitions/models.AddList'
+          $ref: '#/definitions/list.AddList'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ListResponse'
+            $ref: '#/definitions/list.ListResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: Update list
+      tags:
+      - lists
+  /api/v1/lists/{id}/default:
+    put:
+      consumes:
+      - application/json
+      description: set default list
+      parameters:
+      - description: List ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/list.ListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/server.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/server.HTTPError'
+      security:
+      - ApiKeyAuth: []
+      summary: set default list
       tags:
       - lists
   /api/v1/lists/{list-id}/{item-id}:
@@ -388,19 +437,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ListItemResponse'
+            $ref: '#/definitions/list.ListItemResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: Add item to list
@@ -433,15 +482,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: Remove item from list
@@ -468,32 +517,57 @@ paths:
         name: list
         required: true
         schema:
-          $ref: '#/definitions/models.UpdateListItem'
+          $ref: '#/definitions/list.UpdateListItem'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ListItemResponse'
+            $ref: '#/definitions/list.ListItemResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.HTTPError'
+            $ref: '#/definitions/server.HTTPError'
       security:
       - ApiKeyAuth: []
       summary: Update list item
       tags:
       - lists
       - items
+  /api/v1/lists/default:
+    get:
+      consumes:
+      - application/json
+      description: Get the user's default list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/list.DefaultListResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/server.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/server.HTTPError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get the user's default list
+      tags:
+      - lists
 securityDefinitions:
   ApiKeyAuth:
     in: header

@@ -1,10 +1,10 @@
-package controllers
+package controller
 
 import (
-	"ShoppingList-Backend/app/models"
+	"ShoppingList-Backend/app/item"
+	"ShoppingList-Backend/pkg/server"
 	"ShoppingList-Backend/pkg/utils"
 	"ShoppingList-Backend/platform/database"
-	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -17,30 +17,29 @@ import (
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} models.ItemsResponse
-// @Failure 500 {object} models.HTTPError
-// @Failure 404 {object} models.HTTPError
+// @Success 200 {object} item.ItemsResponse
+// @Failure 500 {object} server.HTTPError
+// @Failure 404 {object} server.HTTPError
 // @Router /api/v1/items [get]
 func GetItems(c *fiber.Ctx) error {
 	db, err := database.OpenDBConnection()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.HTTPError{
+		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
 	}
 
-	identityUser := c.Locals("user").(models.IdentityUser)
-	log.Printf("%v", identityUser)
-	items, err := db.GetItems(identityUser.ID)
+	appUser := server.GetAppUser(c)
+	items, err := db.GetItems(appUser.ID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(models.HTTPError{
+		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
 			Error:  err.Error(),
 		})
 	}
 
-	return c.JSON(models.ItemsResponse{
+	return c.JSON(item.ItemsResponse{
 		Data: items,
 	})
 }
@@ -52,15 +51,15 @@ func GetItems(c *fiber.Ctx) error {
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Param item body models.AddItem true "Add item"
-// @Success 200 {object} models.ItemResponse
-// @Failure 500 {object} models.HTTPError
-// @Failure 400 {object} models.HTTPError
+// @Param item body item.AddItem true "Add item"
+// @Success 200 {object} item.ItemResponse
+// @Failure 500 {object} server.HTTPError
+// @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items [post]
 func CreateItem(c *fiber.Ctx) error {
-	addItem := &models.AddItem{}
+	addItem := &item.AddItem{}
 	if err := c.BodyParser(addItem); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.HTTPError{
+		return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
 			Status: fiber.StatusBadRequest,
 			Error:  err.Error(),
 		})
@@ -68,7 +67,7 @@ func CreateItem(c *fiber.Ctx) error {
 
 	db, err := database.OpenDBConnection()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.HTTPError{
+		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
@@ -76,24 +75,24 @@ func CreateItem(c *fiber.Ctx) error {
 
 	validate := utils.NewValidator()
 
-	identityUser := c.Locals("user").(models.IdentityUser)
+	appUser := server.GetAppUser(c)
 
-	item := &models.Item{
+	itemToCreate := &item.Item{
 		ID:      uuid.New(),
 		Name:    addItem.Name,
-		OwnerID: identityUser.ID,
+		OwnerID: appUser.ID,
 	}
 
 	if err := validate.Struct(addItem); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.HTTPError{
+		return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
 			Status: fiber.StatusBadRequest,
 			Error:  err.Error(),
 		})
 	}
 
-	itemId, err := db.CreateItem(item)
+	itemId, err := db.CreateItem(itemToCreate)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.HTTPError{
+		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
@@ -101,13 +100,13 @@ func CreateItem(c *fiber.Ctx) error {
 
 	createdItem, err := db.GetItem(itemId)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.HTTPError{
+		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
 	}
 
-	return c.JSON(models.ItemResponse{
+	return c.JSON(item.ItemResponse{
 		Data: createdItem,
 	})
 }
@@ -120,25 +119,25 @@ func CreateItem(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Item ID"
-// @Param item body models.AddItem true "Update item"
-// @Success 200 {object} models.ItemResponse
-// @Failure 500 {object} models.HTTPError
-// @Failure 404 {object} models.HTTPError
-// @Failure 400 {object} models.HTTPError
+// @Param item body item.AddItem true "Update item"
+// @Success 200 {object} item.ItemResponse
+// @Failure 500 {object} server.HTTPError
+// @Failure 404 {object} server.HTTPError
+// @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items/{id} [put]
 func UpdateItem(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.HTTPError{
+		return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
 			Status: fiber.StatusBadRequest,
 			Error:  err.Error(),
 		})
 	}
 
-	addItem := &models.AddItem{}
+	addItem := &item.AddItem{}
 	if err := c.BodyParser(addItem); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.HTTPError{
+		return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
 			Status: fiber.StatusBadRequest,
 			Error:  err.Error(),
 		})
@@ -146,7 +145,7 @@ func UpdateItem(c *fiber.Ctx) error {
 
 	db, err := database.OpenDBConnection()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.HTTPError{
+		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
@@ -154,7 +153,7 @@ func UpdateItem(c *fiber.Ctx) error {
 
 	foundItem, err := db.GetItem(id)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(models.HTTPError{
+		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
 			Error:  err.Error(),
 		})
@@ -163,7 +162,7 @@ func UpdateItem(c *fiber.Ctx) error {
 	foundItem.Name = addItem.Name
 
 	if err := db.UpdateItem(&foundItem); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.HTTPError{
+		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
@@ -171,13 +170,13 @@ func UpdateItem(c *fiber.Ctx) error {
 
 	updatedItem, err := db.GetItem(id)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.HTTPError{
+		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
 	}
 
-	return c.JSON(models.ItemResponse{
+	return c.JSON(item.ItemResponse{
 		Data: updatedItem,
 	})
 }
@@ -191,28 +190,28 @@ func UpdateItem(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Item ID"
 // @Success 204 {string} status "ok"
-// @Failure 500 {object} models.HTTPError
-// @Failure 400 {object} models.HTTPError
+// @Failure 500 {object} server.HTTPError
+// @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items/{id} [delete]
 func DeleteItem(c *fiber.Ctx) error {
 
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.HTTPError{
+		return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
 			Status: fiber.StatusBadRequest,
 			Error:  err.Error(),
 		})
 	}
 
-	item := &models.Item{
+	item := &item.Item{
 		ID: id,
 	}
 
 	validate := utils.NewValidator()
 
 	if err := validate.StructPartial(item, "id"); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.HTTPError{
+		return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
 			Status: fiber.StatusBadRequest,
 			Error:  err.Error(),
 		})
@@ -220,7 +219,7 @@ func DeleteItem(c *fiber.Ctx) error {
 
 	db, err := database.OpenDBConnection()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.HTTPError{
+		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
@@ -228,22 +227,22 @@ func DeleteItem(c *fiber.Ctx) error {
 
 	foundItem, err := db.GetItem(item.ID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(models.HTTPError{
+		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
 			Error:  err.Error(),
 		})
 	}
 
-	identityUser := c.Locals("user").(models.IdentityUser)
-	if foundItem.OwnerID != identityUser.ID {
-		return c.Status(fiber.StatusNotFound).JSON(models.HTTPError{
+	appUser := server.GetAppUser(c)
+	if foundItem.OwnerID != appUser.ID {
+		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
 			Error:  err.Error(),
 		})
 	}
 
 	if err := db.DeleteItem(&foundItem); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.HTTPError{
+		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"ShoppingList-Backend/app/models"
+	"ShoppingList-Backend/app/user"
 	"fmt"
 	"log"
 	"os"
@@ -55,9 +55,9 @@ func JWTProtected() fiber.Handler {
 			})
 		}
 
-		identityUser := models.IdentityUser{ID: claims.Subject}
+		appUser := user.AppUser{ID: claims.Subject}
 
-		c.Locals("user", identityUser)
+		c.Locals("user", appUser)
 
 		return c.Next()
 	}

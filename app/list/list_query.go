@@ -1,7 +1,10 @@
-package queries
+package list
 
 import (
-	"ShoppingList-Backend/app/models"
+	"ShoppingList-Backend/app/item"
+	"ShoppingList-Backend/app/user"
+	"database/sql"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -11,8 +14,8 @@ type ListQueries struct {
 	*sqlx.DB
 }
 
-func (q *ListQueries) getListItems(listIds []uuid.UUID) ([]models.ListItem, error) {
-	listItems := []models.ListItem{}
+func (q *ListQueries) getListItems(listIds []uuid.UUID) ([]ListItem, error) {
+	listItems := []ListItem{}
 	query, args, err := sqlx.In(`SELECT * FROM list_item WHERE list_id IN (?)`, listIds)
 	if err != nil {
 		return listItems, err
@@ -27,8 +30,8 @@ func (q *ListQueries) getListItems(listIds []uuid.UUID) ([]models.ListItem, erro
 	return listItems, nil
 }
 
-func (q *ListQueries) getItems(itemIds []uuid.UUID) ([]models.Item, error) {
-	items := []models.Item{}
+func (q *ListQueries) getItems(itemIds []uuid.UUID) ([]item.Item, error) {
+	items := []item.Item{}
 	query, args, err := sqlx.In(`SELECT * FROM items WHERE id IN (?)`, itemIds)
 	if err != nil {
 		return items, err
@@ -42,7 +45,7 @@ func (q *ListQueries) getItems(itemIds []uuid.UUID) ([]models.Item, error) {
 	return items, nil
 }
 
-func (q *ListQueries) populateWithItems(lists []models.List) error {
+func (q *ListQueries) populateWithItems(lists []List) error {
 	// Get ListItems
 	listIds := make([]uuid.UUID, len(lists))
 	for _, list := range lists {
@@ -52,13 +55,13 @@ func (q *ListQueries) populateWithItems(lists []models.List) error {
 	if err != nil {
 		return err
 	}
-	listItemsByListId := make(map[uuid.UUID][]models.ListItem)
+	listItemsByListId := make(map[uuid.UUID][]ListItem)
 	for _, listItem := range listItems {
 		_, present := listItemsByListId[listItem.ListID]
 		if present {
 			listItemsByListId[listItem.ListID] = append(listItemsByListId[listItem.ListID], listItem)
 		} else {
-			listItemsByListId[listItem.ListID] = []models.ListItem{listItem}
+			listItemsByListId[listItem.ListID] = []ListItem{listItem}
 		}
 	}
 	for i, list := range lists {
@@ -76,7 +79,7 @@ func (q *ListQueries) populateWithItems(lists []models.List) error {
 	if err != nil {
 		return err
 	}
-	itemsById := make(map[uuid.UUID]models.Item)
+	itemsById := make(map[uuid.UUID]item.Item)
 	for _, item := range items {
 		itemsById[item.ID] = item
 	}
@@ -89,12 +92,12 @@ func (q *ListQueries) populateWithItems(lists []models.List) error {
 	return nil
 }
 
-func (q *ListQueries) GetLists(ownerID string) ([]models.List, error) {
-	lists := []models.List{}
+func (q *ListQueries) GetLists(owner user.AppUser) ([]List, error) {
+	lists := []List{}
 
 	query := `SELECT * FROM lists WHERE owner_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC`
 
-	err := q.Select(&lists, query, ownerID)
+	err := q.Select(&lists, query, owner.ID)
 
 	if err != nil {
 		return lists, err
@@ -104,15 +107,15 @@ func (q *ListQueries) GetLists(ownerID string) ([]models.List, error) {
 
 	for i := range lists {
 		if lists[i].Items == nil {
-			lists[i].Items = make([]models.ListItem, 0)
+			lists[i].Items = make([]ListItem, 0)
 		}
 	}
 
 	return lists, nil
 }
 
-func (q *ListQueries) GetList(id uuid.UUID) (models.List, error) {
-	list := models.List{}
+func (q *ListQueries) GetList(id uuid.UUID, appUser user.AppUser) (List, error) {
+	list := List{}
 
 	query := `SELECT * FROM lists WHERE id = $1 AND deleted_at IS NULL LIMIT 1`
 
@@ -121,26 +124,24 @@ func (q *ListQueries) GetList(id uuid.UUID) (models.List, error) {
 		return list, err
 	}
 
-	lists := []models.List{list}
+	// TODO: check if list is shared with user
+	if list.OwnerID != appUser.ID /* || list is shared with user */ {
+		return list, errors.New("access not allowed")
+	}
+
+	lists := []List{list}
 	q.populateWithItems(lists)
 
 	if lists[0].Items == nil {
-		lists[0].Items = make([]models.ListItem, 0)
+		lists[0].Items = make([]ListItem, 0)
 	}
 
 	return lists[0], err
 }
 
-func (q *ListQueries) CreateList(list models.List) (uuid.UUID, error) {
-	if *list.IsDefault {
-		_, err := q.Exec(`UPDATE lists SET is_default = false, updated_at = NOW() WHERE owner_id = $1`, list.OwnerID)
-		if err != nil {
-			return uuid.Nil, err
-		}
-	}
-
-	query := `INSERT INTO lists (id, name, is_default, owner_id) VALUES ($1, $2, $3, $4)`
-	_, err := q.Exec(query, list.ID, list.Name, list.IsDefault, list.OwnerID)
+func (q *ListQueries) CreateList(list List) (uuid.UUID, error) {
+	query := `INSERT INTO lists (id, name, owner_id) VALUES ($1, $2, $3, $4)`
+	_, err := q.Exec(query, list.ID, list.Name, list.OwnerID)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -148,23 +149,17 @@ func (q *ListQueries) CreateList(list models.List) (uuid.UUID, error) {
 	return list.ID, nil
 }
 
-func (q *ListQueries) UpdateList(list models.List) error {
-	if *list.IsDefault {
-		_, err := q.Exec(`UPDATE lists SET is_default = false, updated_at = NOW() WHERE owner_id = $1`, list.OwnerID)
-		if err != nil {
-			return err
-		}
-	}
-	query := `UPDATE lists SET updated_at = NOW(), name = $2, is_default = $3 WHERE id = $1`
-	_, err := q.Exec(query, list.ID, list.Name, list.IsDefault)
+func (q *ListQueries) UpdateList(list List) error {
+	query := `UPDATE lists SET updated_at = NOW(), name = $2 WHERE id = $1`
+	_, err := q.Exec(query, list.ID, list.Name)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (q *ListQueries) AddItemToList(list models.List, item models.Item) (models.ListItem, error) {
-	listItem := models.ListItem{ID: uuid.New()}
+func (q *ListQueries) AddItemToList(list List, item item.Item) (ListItem, error) {
+	listItem := ListItem{ID: uuid.New()}
 	query := `INSERT INTO list_item (id, list_id, item_id) VALUES ($1, $2, $3)`
 	_, err := q.Exec(query, listItem.ID, list.ID, item.ID)
 	if err != nil {
@@ -179,7 +174,7 @@ func (q *ListQueries) AddItemToList(list models.List, item models.Item) (models.
 	return listItem, nil
 }
 
-func (q *ListQueries) UpdateListItem(listItem models.ListItem) error {
+func (q *ListQueries) UpdateListItem(listItem ListItem) error {
 	query := `UPDATE list_item SET updated_at = NOW(), crossed = $1 WHERE id = $2`
 	_, err := q.Exec(query, listItem.Crossed, listItem.ID)
 	if err != nil {
@@ -188,14 +183,14 @@ func (q *ListQueries) UpdateListItem(listItem models.ListItem) error {
 	return nil
 }
 
-func (q *ListQueries) GetListItem(id uuid.UUID) (models.ListItem, error) {
-	listItem := models.ListItem{}
+func (q *ListQueries) GetListItem(id uuid.UUID) (ListItem, error) {
+	listItem := ListItem{}
 	query := `SELECT * FROM list_item where id = $1`
 	err := q.Get(&listItem, query, id)
 	if err != nil {
 		return listItem, err
 	}
-	item := models.Item{}
+	item := item.Item{}
 	itemQuery := `SELECT * FROM items WHERE id = $1`
 	err = q.Get(&item, itemQuery, listItem.ItemID)
 	if err != nil {
@@ -214,11 +209,52 @@ func (q *ListQueries) RemoveItemFromList(id uuid.UUID) error {
 	return nil
 }
 
-func (q *ListQueries) DeleteList(list models.List) error {
+func (q *ListQueries) DeleteList(list List) error {
 	query := `UPDATE lists SET deleted_at = NOW() WHERE id = $1`
 	_, err := q.Exec(query, list.ID)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (q *ListQueries) GetDefaultList(user user.AppUser) (DefaultList, error) {
+	fetchQuery := `SELECT * FROM default_lists WHERE app_user_id = $1 LIMIT 1`
+	defaultList := DefaultList{}
+	err := q.Get(&defaultList, fetchQuery, user.ID)
+	if err != nil {
+		return defaultList, err
+	}
+	return defaultList, nil
+}
+
+func (q *ListQueries) SetDefaultList(user user.AppUser, list List) (DefaultList, error) {
+	fetchQuery := `SELECT * FROM default_lists WHERE app_user_id = $1 LIMIT 1`
+	currentDefaultList := DefaultList{}
+	err := q.Get(&currentDefaultList, fetchQuery, user.ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// User does not have a default list, create one
+			insertQuery := `INSERT INTO default_lists (app_user_id, list_id) VALUES ($1, $2)`
+			_, err := q.Exec(insertQuery, user.ID, list.ID)
+			if err != nil {
+				return currentDefaultList, err
+			}
+		} else {
+			return currentDefaultList, err
+		}
+	} else {
+		// User already has a default list, so update it
+		updateQuery := `UPDATE default_lists SET list_id = $2 WHERE app_user_id = $1`
+		_, err := q.Exec(updateQuery, user.ID, list.ID)
+		if err != nil {
+			return currentDefaultList, err
+		}
+	}
+
+	err = q.Get(&currentDefaultList, fetchQuery, user.ID, list.ID)
+	if err != nil {
+		return currentDefaultList, err
+	}
+	return currentDefaultList, nil
 }

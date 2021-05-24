@@ -1,12 +1,10 @@
 package main
 
 import (
-	"ShoppingList-Backend/pkg/configs"
+	"ShoppingList-Backend/pkg/config"
 	"ShoppingList-Backend/pkg/middleware"
-	"ShoppingList-Backend/pkg/routes"
-	"ShoppingList-Backend/pkg/utils"
-	"ShoppingList-Backend/platform/database"
-	"flag"
+	"ShoppingList-Backend/pkg/routing"
+	"ShoppingList-Backend/pkg/server"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,22 +22,14 @@ func main() {
 		return
 	}
 
-	migrationsDownFlag := flag.Bool("migrations-down", false, "Set to true, to run down migrations first")
-	flag.Parse()
-	err = database.RunMigrations(*migrationsDownFlag)
-	if err != nil {
-		log.Fatalf("Could not run migrations: %v", err)
-		return
-	}
-
-	config := configs.FiberConfig()
+	config := config.FiberConfig()
 
 	app := fiber.New(config)
 
 	middleware.FiberMiddleware(app)
 
-	routes.SwaggerRoute(app)
-	routes.PrivateRoutes(app)
+	routing.SwaggerRoute(app)
+	routing.PrivateRoutes(app)
 
-	utils.StartServer(app)
+	server.Start(app)
 }
