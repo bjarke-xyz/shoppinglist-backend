@@ -22,7 +22,7 @@ func PrivateRoutes(a *fiber.App) {
 	lists.Get("/default", listController.GetDefaultList)
 	lists.Post("/", listController.CreateList)
 	lists.Put("/:id", listController.UpdateList)
-	lists.Post("/:id/default", listController.SetDefaultList)
+	lists.Put("/:id/default", listController.SetDefaultList)
 	lists.Delete("/:id", listController.DeleteList)
 	lists.Post("/:id/items/:itemId", listController.AddItemToList)
 	lists.Put("/:id/items/:listItemId", listController.UpdateListItem)

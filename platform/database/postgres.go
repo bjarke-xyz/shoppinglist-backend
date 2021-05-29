@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -21,9 +20,9 @@ func PostgreSQLConnection() (*sqlx.DB, error) {
 		return nil, fmt.Errorf("error, not connected to database, %w", err)
 	}
 
-	db.SetMaxOpenConns(maxConn)      // Default is 0 (Unlimited)
-	db.SetMaxIdleConns(maxIdleConn)  // Default is 2
-	db.SetConnMaxLifetime(time.Hour) // 0, connections are reused forever
+	db.SetMaxOpenConns(maxConn)     // Default is 0 (Unlimited)
+	db.SetMaxIdleConns(maxIdleConn) // Default is 2
+	// db.SetConnMaxLifetime(time.Duration(time.Hour)) // 0, connections are reused forever
 
 	if err := db.Ping(); err != nil {
 		defer db.Close()

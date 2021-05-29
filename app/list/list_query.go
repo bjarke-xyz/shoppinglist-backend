@@ -140,7 +140,7 @@ func (q *ListQueries) GetList(id uuid.UUID, appUser user.AppUser) (List, error) 
 }
 
 func (q *ListQueries) CreateList(list List) (uuid.UUID, error) {
-	query := `INSERT INTO lists (id, name, owner_id) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO lists (id, name, owner_id) VALUES ($1, $2, $3)`
 	_, err := q.Exec(query, list.ID, list.Name, list.OwnerID)
 	if err != nil {
 		return uuid.Nil, err
@@ -243,18 +243,21 @@ func (q *ListQueries) SetDefaultList(user user.AppUser, list List) (DefaultList,
 		} else {
 			return currentDefaultList, err
 		}
-	} else {
+	} else if currentDefaultList.ListID != list.ID {
 		// User already has a default list, so update it
-		updateQuery := `UPDATE default_lists SET list_id = $2 WHERE app_user_id = $1`
+		updateQuery := `UPDATE default_lists SET list_id = $2, updated_at = NOW() WHERE app_user_id = $1`
 		_, err := q.Exec(updateQuery, user.ID, list.ID)
 		if err != nil {
 			return currentDefaultList, err
 		}
 	}
 
-	err = q.Get(&currentDefaultList, fetchQuery, user.ID, list.ID)
-	if err != nil {
-		return currentDefaultList, err
+	// If the default list was updated or created, fetch again
+	if currentDefaultList.ListID != list.ID {
+		err = q.Get(&currentDefaultList, fetchQuery, user.ID)
+		if err != nil {
+			return currentDefaultList, err
+		}
 	}
 	return currentDefaultList, nil
 }
