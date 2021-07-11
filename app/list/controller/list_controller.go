@@ -6,7 +6,6 @@ import (
 	"ShoppingList-Backend/pkg/utils"
 	"ShoppingList-Backend/platform/database"
 	"database/sql"
-	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -31,8 +30,11 @@ func GetLists(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
+
 	appUser := server.GetAppUser(c)
-	lists, err := db.GetLists(appUser)
+
+	lists, err := db.List.GetLists(appUser)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -64,9 +66,10 @@ func GetDefaultList(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	appUser := server.GetAppUser(c)
-	defaultList, err := db.GetDefaultList(appUser)
+	defaultList, err := db.List.GetDefaultList(appUser)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
@@ -114,6 +117,7 @@ func CreateList(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	validate := utils.NewValidator()
 
@@ -132,7 +136,7 @@ func CreateList(c *fiber.Ctx) error {
 		})
 	}
 
-	listId, err := db.CreateList(listToCreate)
+	listId, err := db.List.CreateList(listToCreate)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
@@ -140,7 +144,7 @@ func CreateList(c *fiber.Ctx) error {
 		})
 	}
 
-	createdList, err := db.GetList(listId, appUser)
+	createdList, err := db.List.GetList(listId, appUser)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
@@ -192,9 +196,10 @@ func UpdateList(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	appUser := server.GetAppUser(c)
-	foundList, err := db.GetList(id, appUser)
+	foundList, err := db.List.GetList(id, appUser)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -204,14 +209,14 @@ func UpdateList(c *fiber.Ctx) error {
 
 	foundList.Name = addList.Name
 
-	if err := db.UpdateList(foundList); err != nil {
+	if err := db.List.UpdateList(foundList); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
 	}
 
-	updatedList, err := db.GetList(id, appUser)
+	updatedList, err := db.List.GetList(id, appUser)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
@@ -254,9 +259,10 @@ func SetDefaultList(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	appUser := server.GetAppUser(c)
-	foundList, err := db.GetList(id, appUser)
+	foundList, err := db.List.GetList(id, appUser)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -264,7 +270,7 @@ func SetDefaultList(c *fiber.Ctx) error {
 		})
 	}
 
-	defaultList, err := db.SetDefaultList(appUser, foundList)
+	defaultList, err := db.List.SetDefaultList(appUser, foundList)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
@@ -292,7 +298,6 @@ func SetDefaultList(c *fiber.Ctx) error {
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{list-id}/{item-id} [patch]
 func AddItemToList(c *fiber.Ctx) error {
-	log.Println("hej")
 	listIdStr := c.Params("id")
 	listId, err := uuid.Parse(listIdStr)
 	if err != nil {
@@ -318,9 +323,10 @@ func AddItemToList(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	appUser := server.GetAppUser(c)
-	foundList, err := db.GetList(listId, appUser)
+	foundList, err := db.List.GetList(listId, appUser)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -328,7 +334,7 @@ func AddItemToList(c *fiber.Ctx) error {
 		})
 	}
 
-	item, err := db.GetItem(itemId)
+	item, err := db.Item.GetItem(itemId)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -336,7 +342,7 @@ func AddItemToList(c *fiber.Ctx) error {
 		})
 	}
 
-	listItem, err := db.AddItemToList(foundList, item)
+	listItem, err := db.List.AddItemToList(foundList, item)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
@@ -398,16 +404,17 @@ func UpdateListItem(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	appUser := server.GetAppUser(c)
-	if _, err := db.GetList(listId, appUser); err != nil {
+	if _, err := db.List.GetList(listId, appUser); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
 			Error:  err.Error(),
 		})
 	}
 
-	listItem, err := db.GetListItem(listItemId)
+	listItem, err := db.List.GetListItem(listItemId)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -417,7 +424,7 @@ func UpdateListItem(c *fiber.Ctx) error {
 
 	listItem.Crossed = updateListItem.Crossed
 
-	if err := db.UpdateListItem(listItem); err != nil {
+	if err := db.List.UpdateListItem(listItem); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
@@ -470,16 +477,17 @@ func RemoveItemFromList(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	appUser := server.GetAppUser(c)
-	if _, err := db.GetList(listId, appUser); err != nil {
+	if _, err := db.List.GetList(listId, appUser); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
 			Error:  err.Error(),
 		})
 	}
 
-	if err := db.RemoveItemFromList(listItemId); err != nil {
+	if err := db.List.RemoveItemFromList(listItemId); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
@@ -532,9 +540,10 @@ func DeleteList(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	appUser := server.GetAppUser(c)
-	foundList, err := db.GetList(list.ID, appUser)
+	foundList, err := db.List.GetList(list.ID, appUser)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -542,7 +551,7 @@ func DeleteList(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := db.DeleteList(foundList); err != nil {
+	if err := db.List.DeleteList(foundList); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),

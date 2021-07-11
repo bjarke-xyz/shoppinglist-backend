@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/MicahParks/keyfunc"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt"
 )
 
 func JWTProtected() fiber.Handler {

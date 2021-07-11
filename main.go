@@ -6,9 +6,11 @@ import (
 	"ShoppingList-Backend/pkg/routing"
 	"ShoppingList-Backend/pkg/server"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 // @securityDefinitions.apikey ApiKeyAuth
@@ -21,6 +23,14 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 		return
 	}
+
+	var logFormat string
+	if os.Getenv("APP_ENV") == "production" {
+		logFormat = server.LOGFORMAT_JSON
+	} else {
+		logFormat = server.LOGFORMAT_CONSOLE
+	}
+	server.SetLogs(zap.DebugLevel, logFormat)
 
 	config := config.FiberConfig()
 

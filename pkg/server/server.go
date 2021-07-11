@@ -1,11 +1,11 @@
 package server
 
 import (
-	"log"
 	"os"
 	"os/signal"
 
 	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
 func StartWithGracefulShutdown(a *fiber.App) {
@@ -18,7 +18,7 @@ func StartWithGracefulShutdown(a *fiber.App) {
 
 		if err := a.Shutdown(); err != nil {
 			// Error from closing listeners, or context tiemout
-			log.Printf("Oops... Server is not shutting down! Reason: %v", err)
+			zap.S().Errorw("Server is not shutting down!", "Reason", err)
 		}
 
 		close(idleConnsClosed)
@@ -26,8 +26,9 @@ func StartWithGracefulShutdown(a *fiber.App) {
 }
 
 func Start(a *fiber.App) {
+	zap.S().Infow("Api started", "SERVER_URL", os.Getenv("SERVER_URL"))
 	if err := a.Listen(os.Getenv("SERVER_URL")); err != nil {
-		log.Printf("Oops... Server is not running! Reason: %v", err)
+		zap.S().Errorw("Server is not running!", "Reason", err)
 	}
 }
 

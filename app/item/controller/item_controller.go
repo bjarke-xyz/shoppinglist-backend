@@ -29,9 +29,10 @@ func GetItems(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	appUser := server.GetAppUser(c)
-	items, err := db.GetItems(appUser.ID)
+	items, err := db.Item.GetItems(appUser.ID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -72,6 +73,7 @@ func CreateItem(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
 	validate := utils.NewValidator()
 
@@ -90,7 +92,7 @@ func CreateItem(c *fiber.Ctx) error {
 		})
 	}
 
-	itemId, err := db.CreateItem(itemToCreate)
+	itemId, err := db.Item.CreateItem(itemToCreate)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
@@ -98,7 +100,7 @@ func CreateItem(c *fiber.Ctx) error {
 		})
 	}
 
-	createdItem, err := db.GetItem(itemId)
+	createdItem, err := db.Item.GetItem(itemId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
@@ -150,8 +152,9 @@ func UpdateItem(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
-	foundItem, err := db.GetItem(id)
+	foundItem, err := db.Item.GetItem(id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -161,14 +164,14 @@ func UpdateItem(c *fiber.Ctx) error {
 
 	foundItem.Name = addItem.Name
 
-	if err := db.UpdateItem(&foundItem); err != nil {
+	if err := db.Item.UpdateItem(&foundItem); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
 		})
 	}
 
-	updatedItem, err := db.GetItem(id)
+	updatedItem, err := db.Item.GetItem(id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
@@ -224,8 +227,9 @@ func DeleteItem(c *fiber.Ctx) error {
 			Error:  err.Error(),
 		})
 	}
+	defer db.Close()
 
-	foundItem, err := db.GetItem(item.ID)
+	foundItem, err := db.Item.GetItem(item.ID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
 			Status: fiber.StatusNotFound,
@@ -241,7 +245,7 @@ func DeleteItem(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := db.DeleteItem(&foundItem); err != nil {
+	if err := db.Item.DeleteItem(&foundItem); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
 			Status: fiber.StatusInternalServerError,
 			Error:  err.Error(),
