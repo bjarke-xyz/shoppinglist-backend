@@ -13,7 +13,5 @@ FROM scratch
 
 COPY --from=builder ["/build/shoppinglist-backend", "/build/.env", "/"]
 
-EXPOSE 5000
-
 ENTRYPOINT ["/shoppinglist-backend"]
 
