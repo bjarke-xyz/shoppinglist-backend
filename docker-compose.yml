@@ -1,17 +1,17 @@
 version: "3.7"
 
 services:
-	backend:
-		image: registry.bjarke.xyz/shoppinglistv4-backend
-		build:
-			context: ./
-		networks:
-			- shoppinglistv4
-			- swarm-overlay
+  backend:
+    image: registry.bjarke.xyz/shoppinglistv4-backend
+    build:
+      context: ./
+    networks:
+      - shoppinglistv4
+      - swarm-overlay
 
 networks:
   shoppinglistv4:
-		driver: overlay
+    driver: overlay
   swarm-overlay:
     external: true
     name: swarm-overlay
