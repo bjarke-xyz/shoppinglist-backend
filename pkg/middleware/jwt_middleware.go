@@ -3,7 +3,6 @@ package middleware
 import (
 	"ShoppingList-Backend/app/user"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/MicahParks/keyfunc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
+	"go.uber.org/zap"
 )
 
 func JWTProtected() fiber.Handler {
@@ -18,18 +18,20 @@ func JWTProtected() fiber.Handler {
 		jwksUrl := os.Getenv("JWT_JWKS_URL")
 		// keycloakUrl := os.Getenv("JWT_KEYCLOAK_URL")
 
+		logger := zap.S()
+
 		refreshInterval := time.Hour
 
 		options := keyfunc.Options{
 			RefreshInterval: &refreshInterval,
 			RefreshErrorHandler: func(err error) {
-				log.Printf("There was an error with the jwt.KeyFunc. Error: %v", err)
+				logger.Errorf("There was an error with the jwt.KeyFunc. Error: %v", err)
 			},
 		}
 
 		jwks, err := keyfunc.Get(jwksUrl, options)
 		if err != nil {
-			log.Printf("Failed to create JWKS from resource at the given URL. Error: %v", err)
+			logger.Errorf("Failed to create JWKS from resource at the given URL. Error: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Could not create JWKS",
 			})
