@@ -24,32 +24,62 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/items": {
+        "/api/v1/items": {
             "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Find all items",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.Item"
-                            }
-                        }
+                "security": [
+                    {
+                        "ApiKeyAuth": []
                     }
-                }
-            },
-            "post": {
+                ],
+                "description": "Get all items for user",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Create item",
+                "tags": [
+                    "items"
+                ],
+                "summary": "get all items for user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/item.ItemsResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create new item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items"
+                ],
+                "summary": "Create new item",
                 "parameters": [
                     {
                         "description": "Add item",
@@ -57,7 +87,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.AddItem"
+                            "$ref": "#/definitions/item.AddItem"
                         }
                     }
                 ],
@@ -65,36 +95,45 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Item"
+                            "$ref": "#/definitions/item.ItemResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     }
                 }
             }
         },
-        "/items/{id}": {
+        "/api/v1/items/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update item",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "items"
+                ],
                 "summary": "Update item",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Item ID",
                         "name": "id",
                         "in": "path",
@@ -106,7 +145,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UpdateItem"
+                            "$ref": "#/definitions/item.AddItem"
                         }
                     }
                 ],
@@ -114,34 +153,49 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Item"
+                            "$ref": "#/definitions/item.ItemResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     }
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete item",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "delete an item",
+                "tags": [
+                    "items"
+                ],
+                "summary": "Delete item",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Item ID",
                         "name": "id",
                         "in": "path",
@@ -150,49 +204,82 @@ var doc = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
-                    },
-                    "404": {
-                        "description": "Not Found",
+                        "description": "ok",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     }
                 }
             }
         },
-        "/lists": {
+        "/api/v1/lists": {
             "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Find all lists",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.List"
-                            }
-                        }
+                "security": [
+                    {
+                        "ApiKeyAuth": []
                     }
-                }
-            },
-            "post": {
+                ],
+                "description": "Get all lists for user",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Create list",
+                "tags": [
+                    "lists"
+                ],
+                "summary": "get all lists for user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/list.ListsResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create new list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists"
+                ],
+                "summary": "Create new list",
                 "parameters": [
                     {
                         "description": "Add list",
@@ -200,7 +287,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.AddList"
+                            "$ref": "#/definitions/list.AddList"
                         }
                     }
                 ],
@@ -208,127 +295,85 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.List"
+                            "$ref": "#/definitions/list.ListResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     }
                 }
             }
         },
-        "/lists/add/{listId}/{itemId}": {
-            "put": {
+        "/api/v1/lists/default": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get the user's default list",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Add an item to a list",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "List ID",
-                        "name": "listId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Item ID",
-                        "name": "itemId",
-                        "in": "path",
-                        "required": true
-                    }
+                "tags": [
+                    "lists"
                 ],
+                "summary": "Get the user's default list",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.ListItem"
+                            "$ref": "#/definitions/list.DefaultListResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     }
                 }
             }
         },
-        "/lists/remove/{listId}/{itemId}": {
+        "/api/v1/lists/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update list",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Remove an item from a list",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "List ID",
-                        "name": "listId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Item ID",
-                        "name": "itemId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
-                        }
-                    }
-                }
-            }
-        },
-        "/lists/{id}": {
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
+                "tags": [
+                    "lists"
                 ],
                 "summary": "Update list",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "List ID",
                         "name": "id",
                         "in": "path",
@@ -340,7 +385,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UpdateList"
+                            "$ref": "#/definitions/list.AddList"
                         }
                     }
                 ],
@@ -348,34 +393,49 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.List"
+                            "$ref": "#/definitions/list.ListResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     }
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete list",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "delete a list",
+                "tags": [
+                    "lists"
+                ],
+                "summary": "Delete list",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "List ID",
                         "name": "id",
                         "in": "path",
@@ -384,18 +444,272 @@ var doc = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
-                    },
-                    "404": {
-                        "description": "Not Found",
+                        "description": "ok",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.HttpError"
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/lists/{id}/default": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "set default list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists"
+                ],
+                "summary": "set default list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "List ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/list.ListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/lists/{list-id}/{item-id}": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Add item to list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists",
+                    "items"
+                ],
+                "summary": "Add item to list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "List ID",
+                        "name": "list-id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "item-id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/list.ListItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/lists/{list-id}/{list-item-id}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update list item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists",
+                    "items"
+                ],
+                "summary": "Update list item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "List ID",
+                        "name": "list-id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "List-Item ID",
+                        "name": "list-item-id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update list item",
+                        "name": "list",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/list.UpdateListItem"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/list.ListItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Remove item from list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists",
+                    "items"
+                ],
+                "summary": "Remove item from list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "List ID",
+                        "name": "list-id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "List-Item ID",
+                        "name": "list-item-id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.HTTPError"
                         }
                     }
                 }
@@ -403,20 +717,7 @@ var doc = `{
         }
     },
     "definitions": {
-        "controller.HttpError": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 400
-                },
-                "error": {
-                    "type": "string",
-                    "example": "Bad request"
-                }
-            }
-        },
-        "model.AddItem": {
+        "item.AddItem": {
             "type": "object",
             "properties": {
                 "name": {
@@ -424,16 +725,11 @@ var doc = `{
                 }
             }
         },
-        "model.AddList": {
+        "item.Item": {
             "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.Item": {
-            "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
                 "createdAt": {
                     "type": "string"
@@ -442,7 +738,7 @@ var doc = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -455,25 +751,80 @@ var doc = `{
                 }
             }
         },
-        "model.List": {
+        "item.ItemResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/item.Item"
+                }
+            }
+        },
+        "item.ItemsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/item.Item"
+                    }
+                }
+            }
+        },
+        "list.AddList": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "list.DefaultList": {
             "type": "object",
             "properties": {
                 "createdAt": {
                     "type": "string"
                 },
-                "default": {
-                    "type": "boolean"
+                "id": {
+                    "type": "string"
+                },
+                "listId": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "list.DefaultListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/list.DefaultList"
+                }
+            }
+        },
+        "list.List": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
                 },
                 "deletedAt": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.ListItem"
+                        "$ref": "#/definitions/list.ListItem"
                     }
                 },
                 "name": {
@@ -487,50 +838,84 @@ var doc = `{
                 }
             }
         },
-        "model.ListItem": {
+        "list.ListItem": {
             "type": "object",
             "properties": {
                 "createdAt": {
                     "type": "string"
                 },
-                "deletedAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "item": {
-                    "$ref": "#/definitions/model.Item"
-                },
-                "itemId": {
-                    "type": "integer"
-                },
-                "listId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "model.UpdateItem": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.UpdateList": {
-            "type": "object",
-            "properties": {
-                "default": {
+                "crossed": {
                     "type": "boolean"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
-                "name": {
+                "item": {
+                    "$ref": "#/definitions/item.Item"
+                },
+                "itemId": {
+                    "type": "string"
+                },
+                "listId": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }
+        },
+        "list.ListItemResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/list.ListItem"
+                }
+            }
+        },
+        "list.ListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/list.List"
+                }
+            }
+        },
+        "list.ListsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/list.List"
+                    }
+                }
+            }
+        },
+        "list.UpdateListItem": {
+            "type": "object",
+            "properties": {
+                "crossed": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "server.HTTPError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
@@ -546,12 +931,12 @@ type swaggerInfo struct {
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
-	Version:     "1.0",
+	Version:     "",
 	Host:        "",
-	BasePath:    "/api/v1",
+	BasePath:    "",
 	Schemes:     []string{},
-	Title:       "Shopping List API",
-	Description: "API for the Shopping List application",
+	Title:       "",
+	Description: "",
 }
 
 type s struct{}

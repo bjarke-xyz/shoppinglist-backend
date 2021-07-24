@@ -1,66 +1,45 @@
 package main
 
 import (
+	"ShoppingList-Backend/pkg/config"
+	"ShoppingList-Backend/pkg/middleware"
+	"ShoppingList-Backend/pkg/routing"
+	"ShoppingList-Backend/pkg/server"
 	"log"
 	"os"
 
-	"ShoppingList-Backend/controller"
-	_ "ShoppingList-Backend/docs"
-	"ShoppingList-Backend/model"
-
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
-	swaggerFiles "github.com/swaggo/files"     // swagger embed files
-	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
+	"go.uber.org/zap"
 )
 
-// @title Shopping List API
-// @version 1.0
-// @description API for the Shopping List application
-// @BasePath /api/v1
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
-	r := gin.Default()
 
-	db, err := model.Init()
+	err := godotenv.Load()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error loading .env file: %v", err)
+		return
 	}
 
-	err = godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
+	var logFormat string
+	if os.Getenv("APP_ENV") == "production" {
+		logFormat = server.LOGFORMAT_JSON
+	} else {
+		logFormat = server.LOGFORMAT_CONSOLE
 	}
-	jwksURL := os.Getenv("jwks_uri")
-	keycloakURL := os.Getenv("keycloak_url")
+	server.SetLogs(zap.DebugLevel, logFormat)
 
-	c := controller.NewController(db)
+	config := config.FiberConfig()
 
-	r.Use(controller.CORSMiddleware())
-	v1 := r.Group("api/v1")
-	{
-		items := v1.Group("/items")
-		{
-			items.Use(controller.JWTAuthorized(jwksURL, keycloakURL))
-			items.GET("", c.FindItems)
-			items.POST("", c.CreateItem)
-			items.PUT("/:id", c.UpdateItem)
-			items.DELETE("/:id", c.DeleteItem)
-		}
+	app := fiber.New(config)
 
-		lists := v1.Group("/lists")
-		{
-			lists.Use(controller.JWTAuthorized(jwksURL, keycloakURL))
-			lists.GET("", c.FindLists)
-			lists.POST("", c.CreateList)
-			lists.PATCH("/add/:listId/:itemId", c.AddItemToList)
-			lists.PATCH("/remove/:listId/:itemId", c.RemoveItemFromList)
-			lists.PUT("/:id", c.UpdateList)
-			lists.DELETE("/:id", c.DeleteList)
-		}
-	}
+	middleware.FiberMiddleware(app)
 
-	// /swagger/index.html
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	routing.SwaggerRoute(app)
+	routing.PrivateRoutes(app)
 
-	r.Run()
+	server.Start(app)
 }
