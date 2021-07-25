@@ -5,6 +5,8 @@ services:
     image: registry.bjarke.xyz/shoppinglistv4-backend
     build:
       context: ./
+		deploy:
+			replicas: 2
     networks:
       - shoppinglistv4
       - swarm-overlay
