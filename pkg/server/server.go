@@ -1,33 +1,15 @@
 package server
 
 import (
-	"os"
-	"os/signal"
+	"ShoppingList-Backend/pkg/application"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 )
 
-func StartWithGracefulShutdown(a *fiber.App) {
-	idleConnsClosed := make(chan struct{})
-
-	go func() {
-		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt) // Catch OS signals
-		<-sigint
-
-		if err := a.Shutdown(); err != nil {
-			// Error from closing listeners, or context tiemout
-			zap.S().Errorw("Server is not shutting down!", "Reason", err)
-		}
-
-		close(idleConnsClosed)
-	}()
-}
-
-func Start(a *fiber.App) {
-	zap.S().Infow("Api started", "SERVER_URL", os.Getenv("SERVER_URL"))
-	if err := a.Listen(os.Getenv("SERVER_URL")); err != nil {
+func Start(a *fiber.App, app *application.Application) {
+	zap.S().Infow("Api started", "SERVER_URL", app.Cfg.GetServerUrl())
+	if err := a.Listen(app.Cfg.GetServerUrl()); err != nil {
 		zap.S().Errorw("Server is not running!", "Reason", err)
 	}
 }

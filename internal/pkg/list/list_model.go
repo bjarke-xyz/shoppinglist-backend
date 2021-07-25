@@ -1,7 +1,7 @@
 package list
 
 import (
-	"ShoppingList-Backend/app/item"
+	"ShoppingList-Backend/internal/pkg/item"
 	"time"
 
 	"github.com/google/uuid"

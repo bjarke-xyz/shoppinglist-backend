@@ -17,7 +17,7 @@ type Config struct {
 	// Optional. Default: nil
 	Next func(c *fiber.Ctx) bool
 
-	// TimeFormat https://programming.guide/go/format-parse-string-time-date-example.html
+	// TimeFormat https://pkg.go.dev/time#Time.Format
 	//
 	// Optional. Default: 2006-01-02 15:04:05
 	TimeFormat string

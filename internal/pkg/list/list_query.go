@@ -1,8 +1,8 @@
 package list
 
 import (
-	"ShoppingList-Backend/app/item"
-	"ShoppingList-Backend/app/user"
+	"ShoppingList-Backend/internal/pkg/item"
+	"ShoppingList-Backend/internal/pkg/user"
 	"database/sql"
 	"errors"
 
@@ -11,7 +11,7 @@ import (
 )
 
 type ListQueries struct {
-	*sqlx.DB
+	DB *sqlx.DB
 }
 
 func (q *ListQueries) getListItems(listIds []uuid.UUID) ([]ListItem, error) {
@@ -21,8 +21,8 @@ func (q *ListQueries) getListItems(listIds []uuid.UUID) ([]ListItem, error) {
 		return listItems, err
 	}
 
-	query = q.Rebind(query)
-	err = q.Select(&listItems, query, args...)
+	query = q.DB.Rebind(query)
+	err = q.DB.Select(&listItems, query, args...)
 	if err != nil {
 		return listItems, err
 	}
@@ -37,8 +37,8 @@ func (q *ListQueries) getItems(itemIds []uuid.UUID) ([]item.Item, error) {
 		return items, err
 	}
 
-	query = q.Rebind(query)
-	err = q.Select(&items, query, args...)
+	query = q.DB.Rebind(query)
+	err = q.DB.Select(&items, query, args...)
 	if err != nil {
 		return items, err
 	}
@@ -97,7 +97,7 @@ func (q *ListQueries) GetLists(owner user.AppUser) ([]List, error) {
 
 	query := `SELECT * FROM lists WHERE owner_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC`
 
-	err := q.Select(&lists, query, owner.ID)
+	err := q.DB.Select(&lists, query, owner.ID)
 
 	if err != nil {
 		return lists, err
@@ -119,7 +119,7 @@ func (q *ListQueries) GetList(id uuid.UUID, appUser user.AppUser) (List, error) 
 
 	query := `SELECT * FROM lists WHERE id = $1 AND deleted_at IS NULL LIMIT 1`
 
-	err := q.Get(&list, query, id)
+	err := q.DB.Get(&list, query, id)
 	if err != nil {
 		return list, err
 	}
@@ -141,7 +141,7 @@ func (q *ListQueries) GetList(id uuid.UUID, appUser user.AppUser) (List, error) 
 
 func (q *ListQueries) CreateList(list List) (uuid.UUID, error) {
 	query := `INSERT INTO lists (id, name, owner_id) VALUES ($1, $2, $3)`
-	_, err := q.Exec(query, list.ID, list.Name, list.OwnerID)
+	_, err := q.DB.Exec(query, list.ID, list.Name, list.OwnerID)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -151,7 +151,7 @@ func (q *ListQueries) CreateList(list List) (uuid.UUID, error) {
 
 func (q *ListQueries) UpdateList(list List) error {
 	query := `UPDATE lists SET updated_at = NOW(), name = $2 WHERE id = $1`
-	_, err := q.Exec(query, list.ID, list.Name)
+	_, err := q.DB.Exec(query, list.ID, list.Name)
 	if err != nil {
 		return err
 	}
@@ -161,12 +161,12 @@ func (q *ListQueries) UpdateList(list List) error {
 func (q *ListQueries) AddItemToList(list List, item item.Item) (ListItem, error) {
 	listItem := ListItem{ID: uuid.New()}
 	query := `INSERT INTO list_item (id, list_id, item_id) VALUES ($1, $2, $3)`
-	_, err := q.Exec(query, listItem.ID, list.ID, item.ID)
+	_, err := q.DB.Exec(query, listItem.ID, list.ID, item.ID)
 	if err != nil {
 		return listItem, err
 	}
 	fetchQuery := `SELECT * FROM list_item WHERE id = $1`
-	err = q.Get(&listItem, fetchQuery, listItem.ID)
+	err = q.DB.Get(&listItem, fetchQuery, listItem.ID)
 	if err != nil {
 		return listItem, err
 	}
@@ -176,7 +176,7 @@ func (q *ListQueries) AddItemToList(list List, item item.Item) (ListItem, error)
 
 func (q *ListQueries) UpdateListItem(listItem ListItem) error {
 	query := `UPDATE list_item SET updated_at = NOW(), crossed = $1 WHERE id = $2`
-	_, err := q.Exec(query, listItem.Crossed, listItem.ID)
+	_, err := q.DB.Exec(query, listItem.Crossed, listItem.ID)
 	if err != nil {
 		return err
 	}
@@ -186,13 +186,13 @@ func (q *ListQueries) UpdateListItem(listItem ListItem) error {
 func (q *ListQueries) GetListItem(id uuid.UUID) (ListItem, error) {
 	listItem := ListItem{}
 	query := `SELECT * FROM list_item where id = $1`
-	err := q.Get(&listItem, query, id)
+	err := q.DB.Get(&listItem, query, id)
 	if err != nil {
 		return listItem, err
 	}
 	item := item.Item{}
 	itemQuery := `SELECT * FROM items WHERE id = $1`
-	err = q.Get(&item, itemQuery, listItem.ItemID)
+	err = q.DB.Get(&item, itemQuery, listItem.ItemID)
 	if err != nil {
 		return listItem, err
 	}
@@ -202,7 +202,7 @@ func (q *ListQueries) GetListItem(id uuid.UUID) (ListItem, error) {
 
 func (q *ListQueries) RemoveItemFromList(id uuid.UUID) error {
 	query := `DELETE FROM list_item WHERE id = $1`
-	_, err := q.Exec(query, id)
+	_, err := q.DB.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (q *ListQueries) RemoveItemFromList(id uuid.UUID) error {
 
 func (q *ListQueries) DeleteList(list List) error {
 	query := `UPDATE lists SET deleted_at = NOW() WHERE id = $1`
-	_, err := q.Exec(query, list.ID)
+	_, err := q.DB.Exec(query, list.ID)
 	if err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ func (q *ListQueries) DeleteList(list List) error {
 func (q *ListQueries) GetDefaultList(user user.AppUser) (DefaultList, error) {
 	fetchQuery := `SELECT * FROM default_lists WHERE app_user_id = $1 LIMIT 1`
 	defaultList := DefaultList{}
-	err := q.Get(&defaultList, fetchQuery, user.ID)
+	err := q.DB.Get(&defaultList, fetchQuery, user.ID)
 	if err != nil {
 		return defaultList, err
 	}
@@ -231,12 +231,12 @@ func (q *ListQueries) GetDefaultList(user user.AppUser) (DefaultList, error) {
 func (q *ListQueries) SetDefaultList(user user.AppUser, list List) (DefaultList, error) {
 	fetchQuery := `SELECT * FROM default_lists WHERE app_user_id = $1 LIMIT 1`
 	currentDefaultList := DefaultList{}
-	err := q.Get(&currentDefaultList, fetchQuery, user.ID)
+	err := q.DB.Get(&currentDefaultList, fetchQuery, user.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// User does not have a default list, create one
 			insertQuery := `INSERT INTO default_lists (app_user_id, list_id) VALUES ($1, $2)`
-			_, err := q.Exec(insertQuery, user.ID, list.ID)
+			_, err := q.DB.Exec(insertQuery, user.ID, list.ID)
 			if err != nil {
 				return currentDefaultList, err
 			}
@@ -246,7 +246,7 @@ func (q *ListQueries) SetDefaultList(user user.AppUser, list List) (DefaultList,
 	} else if currentDefaultList.ListID != list.ID {
 		// User already has a default list, so update it
 		updateQuery := `UPDATE default_lists SET list_id = $2, updated_at = NOW() WHERE app_user_id = $1`
-		_, err := q.Exec(updateQuery, user.ID, list.ID)
+		_, err := q.DB.Exec(updateQuery, user.ID, list.ID)
 		if err != nil {
 			return currentDefaultList, err
 		}
@@ -254,7 +254,7 @@ func (q *ListQueries) SetDefaultList(user user.AppUser, list List) (DefaultList,
 
 	// If the default list was updated or created, fetch again
 	if currentDefaultList.ListID != list.ID {
-		err = q.Get(&currentDefaultList, fetchQuery, user.ID)
+		err = q.DB.Get(&currentDefaultList, fetchQuery, user.ID)
 		if err != nil {
 			return currentDefaultList, err
 		}

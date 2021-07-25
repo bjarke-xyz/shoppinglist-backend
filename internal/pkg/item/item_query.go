@@ -6,7 +6,7 @@ import (
 )
 
 type ItemQueries struct {
-	*sqlx.DB
+	DB *sqlx.DB
 }
 
 func (q *ItemQueries) GetItems(ownerID string) ([]Item, error) {
@@ -14,7 +14,7 @@ func (q *ItemQueries) GetItems(ownerID string) ([]Item, error) {
 
 	query := `SELECT * FROM items WHERE owner_id = $1 AND deleted_at IS NULL`
 
-	err := q.Select(&items, query, ownerID)
+	err := q.DB.Select(&items, query, ownerID)
 
 	if err != nil {
 		return items, err
@@ -28,7 +28,7 @@ func (q *ItemQueries) GetItem(id uuid.UUID) (Item, error) {
 
 	query := `SELECT * FROM items WHERE id = $1 AND deleted_at IS NULL`
 
-	err := q.Get(&item, query, id)
+	err := q.DB.Get(&item, query, id)
 	if err != nil {
 		return item, err
 	}
@@ -39,14 +39,14 @@ func (q *ItemQueries) GetItem(id uuid.UUID) (Item, error) {
 func (q *ItemQueries) CreateItem(item *Item) (uuid.UUID, error) {
 	existingItem := Item{}
 	fetchQuery := `SELECT * FROM items WHERE name = $1 AND owner_id = $2`
-	err := q.Get(&existingItem, fetchQuery, item.Name, item.OwnerID)
+	err := q.DB.Get(&existingItem, fetchQuery, item.Name, item.OwnerID)
 	if err == nil {
 		return existingItem.ID, nil
 	}
 
 	query := `INSERT INTO items (id, name, owner_id) VALUES ($1, $2, $3)`
 
-	_, err = q.Exec(query, item.ID, item.Name, item.OwnerID)
+	_, err = q.DB.Exec(query, item.ID, item.Name, item.OwnerID)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -56,7 +56,7 @@ func (q *ItemQueries) CreateItem(item *Item) (uuid.UUID, error) {
 
 func (q *ItemQueries) UpdateItem(item *Item) error {
 	query := `UPDATE items SET updated_at = NOW(), name = $2 WHERE id = $1`
-	_, err := q.Exec(query, item.ID, item.Name)
+	_, err := q.DB.Exec(query, item.ID, item.Name)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (q *ItemQueries) UpdateItem(item *Item) error {
 
 func (q *ItemQueries) DeleteItem(item *Item) error {
 	query := `UPDATE items SET deleted_at = NOW() WHERE id = $1`
-	_, err := q.Exec(query, item.ID)
+	_, err := q.DB.Exec(query, item.ID)
 	if err != nil {
 		return err
 	}

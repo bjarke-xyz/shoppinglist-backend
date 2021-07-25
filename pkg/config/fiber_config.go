@@ -1,18 +1,14 @@
 package config
 
 import (
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func FiberConfig() fiber.Config {
-	readTimeoutSecondsCount, _ := strconv.Atoi(os.Getenv("SERVER_READ_TIMEOUT"))
-
+func FiberConfig(cfg *Config) fiber.Config {
 	return fiber.Config{
-		ReadTimeout:           time.Second * time.Duration(readTimeoutSecondsCount),
+		ReadTimeout:           time.Second * time.Duration(cfg.ServerReadTimeout),
 		DisableStartupMessage: true,
 	}
 }

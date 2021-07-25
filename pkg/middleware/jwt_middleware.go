@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"ShoppingList-Backend/app/user"
+	"ShoppingList-Backend/internal/pkg/user"
+	"ShoppingList-Backend/pkg/config"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -13,11 +13,13 @@ import (
 	"go.uber.org/zap"
 )
 
-func JWTProtected() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		jwksUrl := os.Getenv("JWT_JWKS_URL")
-		// keycloakUrl := os.Getenv("JWT_KEYCLOAK_URL")
+func GetAppUser(ctx *fiber.Ctx) user.AppUser {
+	appUser := ctx.Locals("user").(user.AppUser)
+	return appUser
+}
 
+func JWTProtected(cfg *config.Config) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		logger := zap.S()
 
 		refreshInterval := time.Hour
@@ -29,7 +31,7 @@ func JWTProtected() fiber.Handler {
 			},
 		}
 
-		jwks, err := keyfunc.Get(jwksUrl, options)
+		jwks, err := keyfunc.Get(cfg.JwtJwksUrl, options)
 		if err != nil {
 			logger.Errorf("Failed to create JWKS from resource at the given URL. Error: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
