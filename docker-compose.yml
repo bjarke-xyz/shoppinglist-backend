@@ -10,8 +10,12 @@ services:
     networks:
       - shoppinglistv4
       - swarm-overlay
+      - postgres
 
 networks:
+  postgres:
+    external: true
+    name: postgres_prod_postgres-prod
   shoppinglistv4:
     driver: overlay
   swarm-overlay:
