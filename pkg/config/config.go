@@ -24,7 +24,8 @@ type Config struct {
 
 	LogFormat string
 
-	Migrate string
+	Migrate          string
+	MigrateOnStartup bool
 }
 
 func New() *Config {
@@ -51,6 +52,12 @@ func New() *Config {
 	flag.StringVar(&conf.LogFormat, "logformat", os.Getenv("LOG_FORMAT"), "Log format (json or console)")
 
 	flag.StringVar(&conf.Migrate, "migrate", "up", "Specify if we should migrate DB 'up' or 'down'")
+	migrateOnStartup, err := strconv.ParseBool(os.Getenv("DB_MIGRATE_ON_STARTUP"))
+	if err != nil {
+		zap.S().Errorf("Could not read DB_MIGRATE_ON_STARTUP: %v", err)
+		migrateOnStartup = false
+	}
+	flag.BoolVar(&conf.MigrateOnStartup, "migrateonstartup", migrateOnStartup, "Specify if migrations should happen on API startup")
 
 	flag.Parse()
 

@@ -12,18 +12,6 @@ services:
       - swarm-overlay
       - postgres
 
-  migrate:
-    image: registry.bjarke.xyz/shoppinglistv4-backend
-    entrypoint: /shoppinglist-backend-migrate -migrate up
-    deploy:
-      replicas: 0
-      restart_policy:
-        condition: none
-    build:
-      context: ./
-    networks:
-      - postgres
-
 networks:
   postgres:
     external: true

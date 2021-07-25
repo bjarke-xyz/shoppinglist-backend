@@ -2,6 +2,7 @@ package main
 
 import (
 	"ShoppingList-Backend/cmd/api/router"
+	"ShoppingList-Backend/internal/pkg/migration"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/config"
 	"ShoppingList-Backend/pkg/logger"
@@ -29,6 +30,10 @@ func main() {
 	app, err := application.Get(cfg)
 	if err != nil {
 		zap.S().Fatalf("Database error: %v", err)
+	}
+
+	if cfg.MigrateOnStartup {
+		migration.DoMigration("up", cfg.GetDBConnStr())
 	}
 
 	fiberConfig := config.FiberConfig(app.Cfg)
