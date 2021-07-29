@@ -25,6 +25,9 @@ type Config struct {
 	dbUser     string
 	dbPassword string
 
+	redisHost string
+	redisPort string
+
 	LogFormat string
 
 	Migrate          string
@@ -55,6 +58,9 @@ func New() *Config {
 	flag.StringVar(&conf.dbUser, "dbuser", os.Getenv("DB_USER"), "Database user")
 	flag.StringVar(&conf.dbPassword, "dbpassword", os.Getenv("DB_PASSWORD"), "Database password")
 
+	flag.StringVar(&conf.redisHost, "redishost", os.Getenv("REDIS_HOST"), "Redis host")
+	flag.StringVar(&conf.redisPort, "redisport", os.Getenv("REDIS_PORT"), "Redis port")
+
 	flag.StringVar(&conf.LogFormat, "logformat", os.Getenv("LOG_FORMAT"), "Log format (json or console)")
 
 	flag.StringVar(&conf.Migrate, "migrate", "up", "Specify if we should migrate DB 'up' or 'down'")
@@ -75,6 +81,10 @@ func (c *Config) GetDBConnStr() string {
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		c.dbUser, c.dbPassword, c.dbHost, c.dbPort, c.dbName,
 	)
+}
+
+func (c *Config) GetRedisConnStr() string {
+	return fmt.Sprintf("%s:%s", c.redisHost, c.redisPort)
 }
 
 func (c *Config) GetServerUrl() string {
