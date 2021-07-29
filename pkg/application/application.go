@@ -6,11 +6,14 @@ import (
 	"ShoppingList-Backend/internal/pkg/queries"
 	"ShoppingList-Backend/pkg/config"
 	"ShoppingList-Backend/pkg/db"
+
+	"github.com/gomodule/redigo/redis"
 )
 
 type Application struct {
 	Cfg     *config.Config
 	Queries *queries.Queries
+	Redis   *redis.Pool
 }
 
 func Get(cfg *config.Config) (*Application, error) {
@@ -28,8 +31,18 @@ func Get(cfg *config.Config) (*Application, error) {
 		},
 	}
 
+	var redisPool = &redis.Pool{
+		MaxActive: 5,
+		MaxIdle:   5,
+		Wait:      true,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial("tcp", ":6379")
+		},
+	}
+
 	return &Application{
 		Cfg:     cfg,
 		Queries: queries,
+		Redis:   redisPool,
 	}, nil
 }

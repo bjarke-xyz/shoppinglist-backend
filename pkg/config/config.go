@@ -11,10 +11,13 @@ import (
 
 type Config struct {
 	apiPort           string
+	workerWebUIPort   string
 	ServerReadTimeout int
 
-	JwtJwksUrl     string
-	jwtKeycloakUrl string
+	JwtJwksUrl          string
+	JwtKeycloakUrl      string
+	JwtKeycloakUsername string
+	JwtKeycloakPassword string
 
 	dbHost     string
 	dbPort     string
@@ -32,6 +35,7 @@ func New() *Config {
 	conf := &Config{}
 
 	flag.StringVar(&conf.apiPort, "apiport", os.Getenv("API_PORT"), "Which port for the API server to listen on")
+	flag.StringVar(&conf.workerWebUIPort, "workerwebuiport", os.Getenv("WORKER_WEBUI_PORT"), "Which port for the worker web UI server to listen on")
 
 	serverReadTimeout, err := strconv.Atoi(os.Getenv("SERVER_READ_TIMEOUT"))
 	if err != nil {
@@ -41,7 +45,9 @@ func New() *Config {
 	flag.IntVar(&conf.ServerReadTimeout, "serverreadtimeout", serverReadTimeout, "Server read timeout")
 
 	flag.StringVar(&conf.JwtJwksUrl, "jwtjwksurl", os.Getenv("JWT_JWKS_URL"), "JWT JWKS URL")
-	flag.StringVar(&conf.jwtKeycloakUrl, "jwtkeycloakurl", os.Getenv("JWK_KEYCLOAK_URL"), "JWT Keycloak URL")
+	flag.StringVar(&conf.JwtKeycloakUrl, "jwtkeycloakurl", os.Getenv("JWT_KEYCLOAK_URL"), "JWT Keycloak URL")
+	flag.StringVar(&conf.JwtKeycloakUsername, "jwtkeycloakusername", os.Getenv("JWT_KEYCLOAK_USERNAME"), "Keycloak username")
+	flag.StringVar(&conf.JwtKeycloakPassword, "jwtkeycloakpassword", os.Getenv("JWT_KEYCLOAK_PASSWORD"), "Keycloak password")
 
 	flag.StringVar(&conf.dbHost, "dbhost", os.Getenv("DB_HOST"), "Database host")
 	flag.StringVar(&conf.dbPort, "dbport", os.Getenv("DB_PORT"), "Database port")
@@ -73,4 +79,8 @@ func (c *Config) GetDBConnStr() string {
 
 func (c *Config) GetServerUrl() string {
 	return fmt.Sprintf("0.0.0.0:%s", c.apiPort)
+}
+
+func (c *Config) GetWorkerPort() string {
+	return fmt.Sprintf(":%v", c.workerWebUIPort)
 }

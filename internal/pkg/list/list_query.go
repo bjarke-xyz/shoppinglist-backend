@@ -114,6 +114,15 @@ func (q *ListQueries) GetLists(owner user.AppUser) ([]List, error) {
 	return lists, nil
 }
 
+func (q *ListQueries) DeleteLists(ownerID string) error {
+	query := `DELETE FROM LISTS where owner_id = $1`
+	_, err := q.DB.Exec(query, ownerID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (q *ListQueries) GetList(id uuid.UUID, appUser user.AppUser) (List, error) {
 	list := List{}
 

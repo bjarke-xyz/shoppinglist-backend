@@ -23,6 +23,15 @@ func (q *ItemQueries) GetItems(ownerID string) ([]Item, error) {
 	return items, nil
 }
 
+func (q *ItemQueries) DeleteItems(ownerID string) error {
+	query := `DELETE FROM ITEMS where owner_id = $1`
+	_, err := q.DB.Exec(query, ownerID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (q *ItemQueries) GetItem(id uuid.UUID) (Item, error) {
 	item := Item{}
 

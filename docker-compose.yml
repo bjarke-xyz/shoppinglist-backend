@@ -12,6 +12,23 @@ services:
       - swarm-overlay
       - postgres
 
+  worker:
+    image: registry.bjarke.xyz/shoppinglistv4-backend
+    entrypoint: /shoppinglist-backend-worker
+    build:
+      context: ./
+    deploy:
+      replicas: 2
+    networks:
+      - shoppinglistv4
+      - swarm-overlay
+      - postgres
+
+  redis:
+    image: redis:alpine
+    networks:
+      - shoppinglistv4
+
 networks:
   postgres:
     external: true
