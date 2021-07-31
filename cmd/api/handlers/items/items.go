@@ -1,4 +1,4 @@
-package controller
+package items
 
 import (
 	"ShoppingList-Backend/internal/pkg/item"
