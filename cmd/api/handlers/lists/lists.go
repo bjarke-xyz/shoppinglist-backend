@@ -6,6 +6,7 @@ import (
 	"ShoppingList-Backend/pkg/middleware"
 	"ShoppingList-Backend/pkg/server"
 	"ShoppingList-Backend/pkg/utils"
+	"ShoppingList-Backend/pkg/websocket"
 	"database/sql"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,7 +24,7 @@ import (
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Router /api/v1/lists [get]
-func GetLists(app *application.Application) func(*fiber.Ctx) error {
+func GetLists(app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		appUser := middleware.GetAppUser(c)
 
@@ -52,7 +53,7 @@ func GetLists(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Router /api/v1/lists/default [get]
-func GetDefaultList(app *application.Application) func(*fiber.Ctx) error {
+func GetDefaultList(app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		appUser := middleware.GetAppUser(c)
 		defaultList, err := app.Queries.List.GetDefaultList(appUser)
@@ -88,7 +89,7 @@ func GetDefaultList(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists [post]
-func CreateList(app *application.Application) func(*fiber.Ctx) error {
+func CreateList(app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		addList := &list.AddList{}
 		if err := c.BodyParser(addList); err != nil {
@@ -152,7 +153,7 @@ func CreateList(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{id} [put]
-func UpdateList(app *application.Application) func(*fiber.Ctx) error {
+func UpdateList(hub *websocket.Hub, app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		idStr := c.Params("id")
 		id, err := uuid.Parse(idStr)
@@ -197,6 +198,11 @@ func UpdateList(app *application.Application) func(*fiber.Ctx) error {
 			})
 		}
 
+		hub.EmitEvent(websocket.EventPayload{
+			EventType: list.EventListUpdated,
+			EventData: updatedList,
+		}, sessionInfoHasListId(updatedList.ID))
+
 		return c.JSON(list.ListResponse{
 			Data: updatedList,
 		})
@@ -216,7 +222,7 @@ func UpdateList(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{id}/default [put]
-func SetDefaultList(app *application.Application) func(*fiber.Ctx) error {
+func SetDefaultList(app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		idStr := c.Params("id")
 		id, err := uuid.Parse(idStr)
@@ -264,7 +270,7 @@ func SetDefaultList(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{list-id}/{item-id} [patch]
-func AddItemToList(app *application.Application) func(*fiber.Ctx) error {
+func AddItemToList(hub *websocket.Hub, app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		listIdStr := c.Params("id")
 		listId, err := uuid.Parse(listIdStr)
@@ -309,6 +315,11 @@ func AddItemToList(app *application.Application) func(*fiber.Ctx) error {
 			})
 		}
 
+		hub.EmitEvent(websocket.EventPayload{
+			EventType: list.EventListItemsAdded,
+			EventData: listItem,
+		}, sessionInfoHasListId(foundList.ID))
+
 		return c.JSON(list.ListItemResponse{
 			Data: listItem,
 		})
@@ -330,7 +341,7 @@ func AddItemToList(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{list-id}/{list-item-id} [put]
-func UpdateListItem(app *application.Application) func(*fiber.Ctx) error {
+func UpdateListItem(hub *websocket.Hub, app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		listIdStr := c.Params("id")
 		listId, err := uuid.Parse(listIdStr)
@@ -383,6 +394,11 @@ func UpdateListItem(app *application.Application) func(*fiber.Ctx) error {
 			})
 		}
 
+		hub.EmitEvent(websocket.EventPayload{
+			EventType: list.EventListItemsUpdated,
+			EventData: listItem,
+		}, sessionInfoHasListId(listId))
+
 		return c.JSON(list.ListItemResponse{
 			Data: listItem,
 		})
@@ -403,7 +419,7 @@ func UpdateListItem(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{list-id}/{list-item-id} [delete]
-func RemoveItemFromList(app *application.Application) func(*fiber.Ctx) error {
+func RemoveItemFromList(hub *websocket.Hub, app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		listIdStr := c.Params("id")
 		listId, err := uuid.Parse(listIdStr)
@@ -438,6 +454,11 @@ func RemoveItemFromList(app *application.Application) func(*fiber.Ctx) error {
 			})
 		}
 
+		hub.EmitEvent(websocket.EventPayload{
+			EventType: list.EventListItemsRemoved,
+			EventData: listItemId,
+		}, sessionInfoHasListId(listId))
+
 		return c.SendStatus(fiber.StatusNoContent)
 	}
 }
@@ -454,7 +475,7 @@ func RemoveItemFromList(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{id} [delete]
-func DeleteList(app *application.Application) func(*fiber.Ctx) error {
+func DeleteList(app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		idStr := c.Params("id")
 		id, err := uuid.Parse(idStr)

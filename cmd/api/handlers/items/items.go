@@ -22,7 +22,7 @@ import (
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Router /api/v1/items [get]
-func GetItems(app *application.Application) func(*fiber.Ctx) error {
+func GetItems(app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		appUser := middleware.GetAppUser(c)
 		items, err := app.Queries.Item.GetItems(appUser.ID)
@@ -51,7 +51,7 @@ func GetItems(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items [post]
-func CreateItem(app *application.Application) func(*fiber.Ctx) error {
+func CreateItem(app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		addItem := &item.AddItem{}
 		if err := c.BodyParser(addItem); err != nil {
@@ -114,7 +114,7 @@ func CreateItem(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items/{id} [put]
-func UpdateItem(app *application.Application) func(*fiber.Ctx) error {
+func UpdateItem(app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		idStr := c.Params("id")
 		id, err := uuid.Parse(idStr)
@@ -176,7 +176,7 @@ func UpdateItem(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items/{id} [delete]
-func DeleteItem(app *application.Application) func(*fiber.Ctx) error {
+func DeleteItem(app *application.Application) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		idStr := c.Params("id")
 		id, err := uuid.Parse(idStr)

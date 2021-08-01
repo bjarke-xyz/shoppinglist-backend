@@ -46,7 +46,7 @@ func configDefault(config ...Config) Config {
 // Inspiration from:
 // https://github.com/edersohe/zflogger/blob/087c6cbef12b25269934b9883d3881d3933f900e/zflogger.go#L49
 // https://github.com/gofiber/fiber/blob/master/middleware/logger/logger.go
-func ZapLogger(config ...Config) fiber.Handler {
+func NewZapLogger(config ...Config) fiber.Handler {
 
 	cfg := configDefault(config...)
 

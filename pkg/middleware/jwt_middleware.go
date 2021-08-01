@@ -9,12 +9,18 @@ import (
 
 	"github.com/MicahParks/keyfunc"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 	"github.com/golang-jwt/jwt"
 	"go.uber.org/zap"
 )
 
 func GetAppUser(ctx *fiber.Ctx) user.AppUser {
 	appUser := ctx.Locals("user").(user.AppUser)
+	return appUser
+}
+
+func WsGetAppUser(c *websocket.Conn) user.AppUser {
+	appUser := c.Locals("user").(user.AppUser)
 	return appUser
 }
 
@@ -48,12 +54,15 @@ func JWTProtected(cfg *config.Config) fiber.Handler {
 		claims := jwt.StandardClaims{}
 		token, err := jwt.ParseWithClaims(jwtB64, &claims, jwks.KeyFunc)
 		if err != nil {
+			errorMsg := fmt.Sprintf("Failed to parse the JWT. Error: %v", err)
+			c.Response().Header.Add("X-Error-Reason", errorMsg)
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": fmt.Sprintf("Failed to parse the JWT. Error: %v", err),
+				"error": errorMsg,
 			})
 		}
 
 		if !token.Valid {
+			c.Response().Header.Add("X-Error-Reason", "Invalid token")
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid token",
 			})

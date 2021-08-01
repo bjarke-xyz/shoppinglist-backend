@@ -5,6 +5,7 @@ import (
 	listsHandler "ShoppingList-Backend/cmd/api/handlers/lists"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/middleware"
+	"ShoppingList-Backend/pkg/websocket"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -23,15 +24,22 @@ func PrivateRoutes(a *fiber.App, app *application.Application) {
 	items.Delete("/:id", itemsHandler.DeleteItem(app))
 
 	lists := apiv1.Group("/lists", middleware.JWTProtected(app.Cfg))
+
+	listsWs := lists.Group("/ws", middleware.IsWebSocketAllowed())
+
+	listHub := websocket.NewHub()
+	go listHub.Run()
+	listsWs.Get("/default/", listsHandler.WsOnListChanges(listHub, app))
+
 	lists.Get("/", listsHandler.GetLists(app))
 	lists.Get("/default", listsHandler.GetDefaultList(app))
 	lists.Post("/", listsHandler.CreateList(app))
-	lists.Put("/:id", listsHandler.UpdateList(app))
+	lists.Put("/:id", listsHandler.UpdateList(listHub, app))
 	lists.Put("/:id/default", listsHandler.SetDefaultList(app))
 	lists.Delete("/:id", listsHandler.DeleteList(app))
-	lists.Post("/:id/items/:itemId", listsHandler.AddItemToList(app))
-	lists.Put("/:id/items/:listItemId", listsHandler.UpdateListItem(app))
-	lists.Delete("/:id/items/:listItemId", listsHandler.RemoveItemFromList(app))
+	lists.Post("/:id/items/:itemId", listsHandler.AddItemToList(listHub, app))
+	lists.Put("/:id/items/:listItemId", listsHandler.UpdateListItem(listHub, app))
+	lists.Delete("/:id/items/:listItemId", listsHandler.RemoveItemFromList(listHub, app))
 
 }
 
