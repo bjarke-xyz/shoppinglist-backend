@@ -92,7 +92,7 @@ func (q *ListQueries) populateWithItems(lists []List) error {
 	return nil
 }
 
-func (q *ListQueries) GetLists(owner user.AppUser) ([]List, error) {
+func (q *ListQueries) GetLists(owner *user.AppUser) ([]List, error) {
 	lists := []List{}
 
 	query := `SELECT * FROM lists WHERE owner_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC`
@@ -123,7 +123,7 @@ func (q *ListQueries) DeleteLists(ownerID string) error {
 	return nil
 }
 
-func (q *ListQueries) GetList(id uuid.UUID, appUser user.AppUser) (List, error) {
+func (q *ListQueries) GetList(id uuid.UUID, appUser *user.AppUser) (List, error) {
 	list := List{}
 
 	query := `SELECT * FROM lists WHERE id = $1 AND deleted_at IS NULL LIMIT 1`
@@ -227,7 +227,7 @@ func (q *ListQueries) DeleteList(list List) error {
 	return nil
 }
 
-func (q *ListQueries) GetDefaultList(user user.AppUser) (DefaultList, error) {
+func (q *ListQueries) GetDefaultList(user *user.AppUser) (DefaultList, error) {
 	fetchQuery := `SELECT * FROM default_lists WHERE app_user_id = $1 LIMIT 1`
 	defaultList := DefaultList{}
 	err := q.DB.Get(&defaultList, fetchQuery, user.ID)
@@ -237,7 +237,7 @@ func (q *ListQueries) GetDefaultList(user user.AppUser) (DefaultList, error) {
 	return defaultList, nil
 }
 
-func (q *ListQueries) SetDefaultList(user user.AppUser, list List) (DefaultList, error) {
+func (q *ListQueries) SetDefaultList(user *user.AppUser, list List) (DefaultList, error) {
 	fetchQuery := `SELECT * FROM default_lists WHERE app_user_id = $1 LIMIT 1`
 	currentDefaultList := DefaultList{}
 	err := q.DB.Get(&currentDefaultList, fetchQuery, user.ID)

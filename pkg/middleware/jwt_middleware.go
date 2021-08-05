@@ -14,13 +14,13 @@ import (
 	"go.uber.org/zap"
 )
 
-func GetAppUser(ctx *fiber.Ctx) user.AppUser {
-	appUser := ctx.Locals("user").(user.AppUser)
+func GetAppUser(ctx *fiber.Ctx) *user.AppUser {
+	appUser := ctx.Locals("user").(*user.AppUser)
 	return appUser
 }
 
-func WsGetAppUser(c *websocket.Conn) user.AppUser {
-	appUser := c.Locals("user").(user.AppUser)
+func WsGetAppUser(c *websocket.Conn) *user.AppUser {
+	appUser := c.Locals("user").(*user.AppUser)
 	return appUser
 }
 
@@ -68,7 +68,7 @@ func JWTProtected(cfg *config.Config) fiber.Handler {
 			})
 		}
 
-		appUser := user.AppUser{ID: claims.Subject}
+		appUser := &user.AppUser{ID: claims.Subject}
 
 		c.Locals("user", appUser)
 
