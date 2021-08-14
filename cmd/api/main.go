@@ -11,6 +11,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
@@ -36,6 +37,8 @@ func main() {
 		migration.DoMigration("up", cfg.GetDBConnStr())
 	}
 
+	r := mux.NewRouter()
+
 	fiberConfig := config.FiberConfig(app.Cfg)
 
 	fiberApp := fiber.New(fiberConfig)
@@ -43,7 +46,7 @@ func main() {
 	middleware.FiberMiddleware(fiberApp)
 
 	router.SwaggerRoute(fiberApp, app)
-	router.PrivateRoutes(fiberApp, app)
+	router.PrivateRoutes(fiberApp, app, r)
 
-	server.Start(fiberApp, app)
+	server.Start(fiberApp, app, r)
 }

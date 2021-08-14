@@ -6,6 +6,7 @@ import (
 	"ShoppingList-Backend/pkg/middleware"
 	"ShoppingList-Backend/pkg/server"
 	"ShoppingList-Backend/pkg/utils"
+	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -22,18 +23,19 @@ import (
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Router /api/v1/items [get]
-func GetItems(app *application.Application) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		appUser := middleware.GetAppUser(c)
+func GetItems(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		appUser := middleware.UserFromContext(r.Context())
 		items, err := app.Queries.Item.GetItems(appUser.ID)
 		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
+			app.Srv.Respond(w, r, http.StatusNotFound, server.HTTPError{
+				Status: http.StatusNotFound,
 				Error:  err.Error(),
 			})
+			return
 		}
 
-		return c.JSON(item.ItemsResponse{
+		app.Srv.Respond(w, r, http.StatusOK, item.ItemsResponse{
 			Data: items,
 		})
 	}

@@ -6,6 +6,7 @@ import (
 	"ShoppingList-Backend/internal/pkg/queries"
 	"ShoppingList-Backend/pkg/config"
 	"ShoppingList-Backend/pkg/db"
+	"ShoppingList-Backend/pkg/server"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -14,6 +15,7 @@ type Application struct {
 	Cfg     *config.Config
 	Queries *queries.Queries
 	Redis   *redis.Pool
+	Srv     *server.Server
 }
 
 func Get(cfg *config.Config) (*Application, error) {
