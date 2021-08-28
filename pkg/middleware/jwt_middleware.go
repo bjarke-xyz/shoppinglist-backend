@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/MicahParks/keyfunc"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/websocket/v2"
 	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -20,18 +18,11 @@ import (
 type userContextKey string
 
 func UserFromContext(ctx context.Context) *user.AppUser {
-	appUser := ctx.Value("user").(*user.AppUser)
-	return appUser
-}
-
-func GetAppUser(ctx *fiber.Ctx) *user.AppUser {
-	appUser := ctx.Locals("user").(*user.AppUser)
-	return appUser
-}
-
-func WsGetAppUser(c *websocket.Conn) *user.AppUser {
-	appUser := c.Locals("user").(*user.AppUser)
-	return appUser
+	appUser, ok := ctx.Value(userContextKey("user")).(*user.AppUser)
+	if ok {
+		return appUser
+	}
+	return nil
 }
 
 func JWTProtected(cfg *config.Config) mux.MiddlewareFunc {
@@ -52,6 +43,7 @@ func JWTProtected(cfg *config.Config) mux.MiddlewareFunc {
 			if err != nil {
 				logger.Errorf("Failed to create JWKS from resource at the given URL. Error: %v", err)
 				http.Error(w, "Could not create JWKS", http.StatusInternalServerError)
+				return
 			}
 
 			authHeader := r.Header.Get("Authorization")
@@ -78,11 +70,8 @@ func JWTProtected(cfg *config.Config) mux.MiddlewareFunc {
 
 			appUser := &user.AppUser{ID: claims.Subject}
 
-			// c.Locals("user", appUser)
-
 			ctx := context.WithValue(r.Context(), userContextKey("user"), appUser)
 
-			// return c.Next()
 			next.ServeHTTP(w, r.WithContext(ctx))
 
 		})

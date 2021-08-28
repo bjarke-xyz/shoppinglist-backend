@@ -21,7 +21,7 @@ type AddItem struct {
 }
 
 type ItemResponse struct {
-	Data Item `json:"data"`
+	Data *Item `json:"data"`
 }
 
 type ItemsResponse struct {

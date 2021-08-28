@@ -5,31 +5,45 @@ import (
 	"ShoppingList-Backend/pkg/middleware"
 	"ShoppingList-Backend/pkg/server"
 	pkgWebsocket "ShoppingList-Backend/pkg/websocket"
+	"fmt"
+	"net/http"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/websocket/v2"
+	"github.com/gorilla/websocket"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-func WsOnListChanges(hub *pkgWebsocket.Hub, app *application.Application) fiber.Handler {
-	return websocket.New(func(c *websocket.Conn) {
-
-		appUser := middleware.WsGetAppUser(c)
-		zap.S().Infow("new websocket connection", "user", appUser)
-		defaultListAssociation, err := app.Queries.List.GetDefaultList(appUser)
+func WsOnListChanges(hub *pkgWebsocket.Hub, app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("w's type is %T\n", w)
+		upgrader := websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+		}
+		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			c.WriteJSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
+			zap.S().Errorf("could not upgrade websocket: %v", err)
+			return
+		}
+
+		user := middleware.UserFromContext(r.Context())
+		zap.S().Infow("new websocket connection", "user", user)
+
+		defaultListAssociation, cErr := app.Controllers.List.GetDefaultList(user)
+		if cErr != nil {
+			conn.WriteJSON(server.HTTPError{
+				Status: cErr.StatusCode,
+				Error:  cErr.Err.Error(),
 			})
 			return
 		}
 
-		client := pkgWebsocket.NewClient(hub, c)
+		client := pkgWebsocket.NewClient(hub, conn)
 		client.SessionInfo["id"] = defaultListAssociation.ListID
 		client.ReadWritePump()
-	})
+
+	}
 }
 
 func sessionInfoHasListId(listId uuid.UUID) pkgWebsocket.ClientFilter {

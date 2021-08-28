@@ -23,7 +23,7 @@ type AddList struct {
 
 // TODO: Create generic response type
 type ListResponse struct {
-	Data List `json:"data"`
+	Data *List `json:"data"`
 }
 
 type ListsResponse struct {
@@ -44,7 +44,7 @@ type UpdateListItem struct {
 }
 
 type ListItemResponse struct {
-	Data ListItem `json:"data"`
+	Data *ListItem `json:"data"`
 }
 
 type DefaultList struct {
@@ -55,5 +55,5 @@ type DefaultList struct {
 	ListID    uuid.UUID  `db:"list_id" json:"listId"`
 }
 type DefaultListResponse struct {
-	Data DefaultList `json:"data"`
+	Data *DefaultList `json:"data"`
 }

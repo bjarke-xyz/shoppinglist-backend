@@ -4,12 +4,11 @@ import (
 	"ShoppingList-Backend/internal/pkg/item"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/middleware"
-	"ShoppingList-Backend/pkg/server"
-	"ShoppingList-Backend/pkg/utils"
+	"fmt"
 	"net/http"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 // GetItems func gets all items for user
@@ -26,12 +25,10 @@ import (
 func GetItems(app *application.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		appUser := middleware.UserFromContext(r.Context())
-		items, err := app.Queries.Item.GetItems(appUser.ID)
+
+		items, err := app.Controllers.Item.GetItems(appUser)
 		if err != nil {
-			app.Srv.Respond(w, r, http.StatusNotFound, server.HTTPError{
-				Status: http.StatusNotFound,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, err.StatusCode, err.Err)
 			return
 		}
 
@@ -53,50 +50,23 @@ func GetItems(app *application.Application) http.HandlerFunc {
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items [post]
-func CreateItem(app *application.Application) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+func CreateItem(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
 		addItem := &item.AddItem{}
-		if err := c.BodyParser(addItem); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+		if err := app.Srv.Decode(w, r, addItem); err != nil {
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse body: %w", err))
+			return
 		}
+		appUser := middleware.UserFromContext(r.Context())
 
-		validate := utils.NewValidator()
-
-		appUser := middleware.GetAppUser(c)
-
-		itemToCreate := &item.Item{
-			ID:      uuid.New(),
-			Name:    addItem.Name,
-			OwnerID: appUser.ID,
-		}
-
-		if err := validate.Struct(addItem); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
-		}
-
-		itemId, err := app.Queries.Item.CreateItem(itemToCreate)
+		createdItem, err := app.Controllers.Item.CreateItem(appUser, addItem)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, err.StatusCode, err.Err)
+			return
 		}
 
-		createdItem, err := app.Queries.Item.GetItem(itemId)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		return c.JSON(item.ItemResponse{
+		app.Srv.Respond(w, r, http.StatusOK, item.ItemResponse{
 			Data: createdItem,
 		})
 	}
@@ -116,51 +86,31 @@ func CreateItem(app *application.Application) fiber.Handler {
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items/{id} [put]
-func UpdateItem(app *application.Application) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		idStr := c.Params("id")
+func UpdateItem(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		idStr := params["id"]
 		id, err := uuid.Parse(idStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse item id %v: %w", idStr, err))
+			return
 		}
+
+		appUser := middleware.UserFromContext(r.Context())
 
 		addItem := &item.AddItem{}
-		if err := c.BodyParser(addItem); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+		if err := app.Srv.Decode(w, r, addItem); err != nil {
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse body: %w", err))
+			return
 		}
 
-		foundItem, err := app.Queries.Item.GetItem(id)
+		updatedItem, errr := app.Controllers.Item.UpdateItem(appUser, id, addItem)
 		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, errr.StatusCode, errr.Err)
+			return
 		}
 
-		foundItem.Name = addItem.Name
-
-		if err := app.Queries.Item.UpdateItem(&foundItem); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		updatedItem, err := app.Queries.Item.GetItem(id)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		return c.JSON(item.ItemResponse{
+		app.Srv.Respond(w, r, http.StatusOK, item.ItemResponse{
 			Data: updatedItem,
 		})
 	}
@@ -178,55 +128,25 @@ func UpdateItem(app *application.Application) fiber.Handler {
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items/{id} [delete]
-func DeleteItem(app *application.Application) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		idStr := c.Params("id")
+func DeleteItem(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		idStr := params["id"]
 		id, err := uuid.Parse(idStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse item id %v: %w", idStr, err))
+			return
 		}
 
-		item := &item.Item{
-			ID: id,
+		appUser := middleware.UserFromContext(r.Context())
+
+		_, cErr := app.Controllers.Item.DeleteItem(appUser, id)
+		if cErr != nil {
+			app.Srv.RespondError(w, r, cErr.StatusCode, cErr.Err)
+			return
 		}
 
-		validate := utils.NewValidator()
-
-		if err := validate.StructPartial(item, "id"); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
-		}
-
-		foundItem, err := app.Queries.Item.GetItem(item.ID)
-		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
-		}
-
-		appUser := middleware.GetAppUser(c)
-		if foundItem.OwnerID != appUser.ID {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
-		}
-
-		if err := app.Queries.Item.DeleteItem(&foundItem); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		return c.SendStatus(fiber.StatusNoContent)
-
+		app.Srv.Respond(w, r, http.StatusNoContent, nil)
 	}
 
 }
