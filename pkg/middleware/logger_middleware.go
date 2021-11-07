@@ -156,6 +156,17 @@ func NewZapLogger(config ...Config) func(http.Handler) http.Handler {
 				logger := zap.L()
 				defer logger.Sync()
 				// TODO: make fields configurable
+
+				url := r.URL
+				query := url.Query()
+				queryParamsToDrop := []string{"Authorization"}
+				for _, param := range queryParamsToDrop {
+					if query.Has(param) {
+						query.Set(param, "redacted")
+					}
+				}
+				url.RawQuery = query.Encode()
+
 				logger.Info(message,
 					zap.String("Timestamp", start.Format(cfg.TimeFormat)),
 					zap.Int("Status", status),
@@ -163,7 +174,7 @@ func NewZapLogger(config ...Config) func(http.Handler) http.Handler {
 					zap.String("IP", r.RemoteAddr),
 					zap.String("RequestID", requestId),
 					zap.String("Method", r.Method),
-					zap.String("Path", r.RequestURI),
+					zap.String("Path", url.String()),
 					zap.String("Stacktrace", errorStack),
 					zap.NamedError("Error", errorMsg),
 				)

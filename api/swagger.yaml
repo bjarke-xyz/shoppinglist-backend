@@ -125,6 +125,8 @@ definitions:
     type: object
 info:
   contact: {}
+  title: ShoppingList V4 Backend API
+  version: "1.0"
 paths:
   /api/v1/items:
     get:

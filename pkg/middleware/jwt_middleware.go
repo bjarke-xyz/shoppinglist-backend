@@ -47,6 +47,9 @@ func JWTProtected(cfg *config.Config) mux.MiddlewareFunc {
 			}
 
 			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				authHeader = r.URL.Query().Get("Authorization")
+			}
 			if !strings.Contains(authHeader, "Bearer") {
 				http.Error(w, "Forbidden", http.StatusForbidden)
 				return

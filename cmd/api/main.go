@@ -14,6 +14,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// @title ShoppingList V4 Backend API
+// @version 1.0
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
@@ -37,7 +39,7 @@ func main() {
 
 	r := mux.NewRouter().StrictSlash(true)
 
-	router.SwaggerRoute(app)
+	router.SwaggerRoute(app, r)
 	router.PrivateRoutes(app, r)
 
 	server.Start(app.Cfg, r)
