@@ -23,7 +23,8 @@ type Config struct {
 	// TimeFormat https://pkg.go.dev/time#Time.Format
 	//
 	// Optional. Default: 2006-01-02 15:04:05
-	TimeFormat string
+	TimeFormat          string
+	RedactedQueryParams []string
 }
 
 // Minimal wrapper around http.ResponseWriter to capture http status code
@@ -159,10 +160,9 @@ func NewZapLogger(config ...Config) func(http.Handler) http.Handler {
 
 				url := r.URL
 				query := url.Query()
-				queryParamsToDrop := []string{"Authorization"}
-				for _, param := range queryParamsToDrop {
+				for _, param := range cfg.RedactedQueryParams {
 					if query.Has(param) {
-						query.Set(param, "redacted")
+						query.Set(param, "<REDACTED>")
 					}
 				}
 				url.RawQuery = query.Encode()

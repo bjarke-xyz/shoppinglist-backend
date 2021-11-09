@@ -20,7 +20,7 @@ import (
 func PrivateRoutes(app *application.Application, r *mux.Router) {
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
 
-	apiV1.Use(middleware.NewZapLogger())
+	apiV1.Use(middleware.NewZapLogger(middleware.Config{RedactedQueryParams: []string{"Authorization"}}))
 
 	// Items
 	items := apiV1.PathPrefix("/items").Subrouter()
