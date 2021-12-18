@@ -1,6 +1,7 @@
 package items
 
 import (
+	"ShoppingList-Backend/internal/pkg/common"
 	"ShoppingList-Backend/internal/pkg/item"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/middleware"
@@ -18,7 +19,7 @@ import (
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} item.ItemsResponse
+// @Success 200 {object} common.Response{data=[]item.Item}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Router /api/v1/items [get]
@@ -32,7 +33,7 @@ func GetItems(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.Srv.Respond(w, r, http.StatusOK, item.ItemsResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: items,
 		})
 	}
@@ -46,7 +47,7 @@ func GetItems(app *application.Application) http.HandlerFunc {
 // @Accept json
 // @Produce json
 // @Param item body item.AddItem true "Add item"
-// @Success 200 {object} item.ItemResponse
+// @Success 200 {object} common.Response{data=item.Item}
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/items [post]
@@ -66,7 +67,7 @@ func CreateItem(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.Srv.Respond(w, r, http.StatusOK, item.ItemResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: createdItem,
 		})
 	}
@@ -81,7 +82,7 @@ func CreateItem(app *application.Application) http.HandlerFunc {
 // @Produce json
 // @Param id path string true "Item ID"
 // @Param item body item.AddItem true "Update item"
-// @Success 200 {object} item.ItemResponse
+// @Success 200 {object} common.Response{data=item.Item}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
@@ -110,7 +111,7 @@ func UpdateItem(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.Srv.Respond(w, r, http.StatusOK, item.ItemResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: updatedItem,
 		})
 	}

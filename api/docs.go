@@ -45,7 +45,22 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/item.ItemsResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/item.Item"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -94,7 +109,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/item.ItemResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/item.Item"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -152,7 +179,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/item.ItemResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/item.Item"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -245,7 +284,22 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListsResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/list.List"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -294,7 +348,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.List"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -334,7 +400,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.DefaultListResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.DefaultList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -392,7 +470,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.List"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -494,7 +584,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.DefaultList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -557,7 +659,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListItemResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.ListItem"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -629,7 +743,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListItemResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.ListItem"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -716,6 +842,12 @@ var doc = `{
         }
     },
     "definitions": {
+        "common.Response": {
+            "type": "object",
+            "properties": {
+                "data": {}
+            }
+        },
         "item.AddItem": {
             "type": "object",
             "properties": {
@@ -750,25 +882,6 @@ var doc = `{
                 }
             }
         },
-        "item.ItemResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/item.Item"
-                }
-            }
-        },
-        "item.ItemsResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/item.Item"
-                    }
-                }
-            }
-        },
         "list.AddList": {
             "type": "object",
             "properties": {
@@ -794,14 +907,6 @@ var doc = `{
                 },
                 "userId": {
                     "type": "string"
-                }
-            }
-        },
-        "list.DefaultListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/list.DefaultList"
                 }
             }
         },
@@ -860,33 +965,6 @@ var doc = `{
                 },
                 "updatedAt": {
                     "type": "string"
-                }
-            }
-        },
-        "list.ListItemResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/list.ListItem"
-                }
-            }
-        },
-        "list.ListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/list.List"
-                }
-            }
-        },
-        "list.ListsResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/list.List"
-                    }
                 }
             }
         },

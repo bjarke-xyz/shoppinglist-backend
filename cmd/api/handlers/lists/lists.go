@@ -1,6 +1,7 @@
 package lists
 
 import (
+	"ShoppingList-Backend/internal/pkg/common"
 	"ShoppingList-Backend/internal/pkg/list"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/middleware"
@@ -19,7 +20,7 @@ import (
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} list.ListsResponse
+// @Success 200 {object} common.Response{data=[]list.List}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Router /api/v1/lists [get]
@@ -32,7 +33,7 @@ func GetLists(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.Srv.Respond(w, r, http.StatusOK, list.ListsResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: lists,
 		})
 	}
@@ -45,7 +46,7 @@ func GetLists(app *application.Application) http.HandlerFunc {
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} list.DefaultListResponse
+// @Success 200 {object} common.Response{data=list.DefaultList}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Router /api/v1/lists/default [get]
@@ -58,7 +59,7 @@ func GetDefaultList(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.Srv.Respond(w, r, http.StatusOK, list.DefaultListResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: defaultList,
 		})
 	}
@@ -72,7 +73,7 @@ func GetDefaultList(app *application.Application) http.HandlerFunc {
 // @Accept json
 // @Produce json
 // @Param list body list.AddList true "Add list"
-// @Success 200 {object} list.ListResponse
+// @Success 200 {object} common.Response{data=list.List}
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists [post]
@@ -92,7 +93,7 @@ func CreateList(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.Srv.Respond(w, r, http.StatusOK, list.ListResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: createdList,
 		})
 	}
@@ -107,7 +108,7 @@ func CreateList(app *application.Application) http.HandlerFunc {
 // @Produce json
 // @Param id path string true "List ID"
 // @Param list body list.AddList true "Update list"
-// @Success 200 {object} list.ListResponse
+// @Success 200 {object} common.Response{data=list.List}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
@@ -141,7 +142,7 @@ func UpdateList(hub *websocket.Hub, app *application.Application) http.HandlerFu
 			EventData: updatedList,
 		}, sessionInfoHasListId(id))
 
-		app.Srv.Respond(w, r, http.StatusOK, list.ListResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: updatedList,
 		})
 	}
@@ -155,7 +156,7 @@ func UpdateList(hub *websocket.Hub, app *application.Application) http.HandlerFu
 // @Accept json
 // @Produce json
 // @Param id path string true "List ID"
-// @Success 200 {object} list.ListResponse
+// @Success 200 {object} common.Response{data=list.DefaultList}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
@@ -177,7 +178,7 @@ func SetDefaultList(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.Srv.Respond(w, r, http.StatusOK, list.DefaultListResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: defaultList,
 		})
 	}
@@ -192,7 +193,7 @@ func SetDefaultList(app *application.Application) http.HandlerFunc {
 // @Produce json
 // @Param list-id path string true "List ID"
 // @Param item-id path string true "Item ID"
-// @Success 200 {object} list.ListItemResponse
+// @Success 200 {object} common.Response{data=list.ListItem}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
@@ -227,7 +228,7 @@ func AddItemToList(hub *websocket.Hub, app *application.Application) http.Handle
 			EventData: listItem,
 		}, sessionInfoHasListId(listId))
 
-		app.Srv.Respond(w, r, http.StatusOK, list.ListItemResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: listItem,
 		})
 	}
@@ -243,7 +244,7 @@ func AddItemToList(hub *websocket.Hub, app *application.Application) http.Handle
 // @Param list-id path string true "List ID"
 // @Param list-item-id path string true "List-Item ID"
 // @Param list body list.UpdateListItem true "Update list item"
-// @Success 200 {object} list.ListItemResponse
+// @Success 200 {object} common.Response{data=list.ListItem}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
@@ -284,7 +285,7 @@ func UpdateListItem(hub *websocket.Hub, app *application.Application) http.Handl
 			EventData: updatedListItem,
 		}, sessionInfoHasListId(listId))
 
-		app.Srv.Respond(w, r, http.StatusOK, list.ListItemResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: updatedListItem,
 		})
 	}

@@ -1,4 +1,8 @@
 definitions:
+  common.Response:
+    properties:
+      data: {}
+    type: object
   item.AddItem:
     properties:
       name:
@@ -21,18 +25,6 @@ definitions:
     required:
     - id
     type: object
-  item.ItemResponse:
-    properties:
-      data:
-        $ref: '#/definitions/item.Item'
-    type: object
-  item.ItemsResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/item.Item'
-        type: array
-    type: object
   list.AddList:
     properties:
       name:
@@ -50,11 +42,6 @@ definitions:
         type: string
       userId:
         type: string
-    type: object
-  list.DefaultListResponse:
-    properties:
-      data:
-        $ref: '#/definitions/list.DefaultList'
     type: object
   list.List:
     properties:
@@ -94,23 +81,6 @@ definitions:
       updatedAt:
         type: string
     type: object
-  list.ListItemResponse:
-    properties:
-      data:
-        $ref: '#/definitions/list.ListItem'
-    type: object
-  list.ListResponse:
-    properties:
-      data:
-        $ref: '#/definitions/list.List'
-    type: object
-  list.ListsResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/list.List'
-        type: array
-    type: object
   list.UpdateListItem:
     properties:
       crossed:
@@ -139,7 +109,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/item.ItemsResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/item.Item'
+                  type: array
+              type: object
         "404":
           description: Not Found
           schema:
@@ -170,7 +147,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/item.ItemResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/item.Item'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -237,7 +219,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/item.ItemResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/item.Item'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -266,7 +253,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListsResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/list.List'
+                  type: array
+              type: object
         "404":
           description: Not Found
           schema:
@@ -297,7 +291,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.List'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -364,7 +363,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.List'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -399,7 +403,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.DefaultList'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -439,7 +448,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListItemResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.ListItem'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -526,7 +540,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListItemResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.ListItem'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -556,7 +575,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.DefaultListResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.DefaultList'
+              type: object
         "404":
           description: Not Found
           schema:
