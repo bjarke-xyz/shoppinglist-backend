@@ -36,7 +36,7 @@ func Get(cfg *config.Config) (*Application, error) {
 		MaxIdle:   5,
 		Wait:      true,
 		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", cfg.GetRedisConnStr())
+			return redis.Dial("tcp", cfg.GetRedisConnStr(), redis.DialClientName("slv4"))
 		},
 	}
 
