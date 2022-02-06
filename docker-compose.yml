@@ -10,7 +10,6 @@ services:
     networks:
       - shoppinglistv4
       - swarm-overlay
-      - postgres
 
   worker:
     image: registry.bjarke.xyz/shoppinglistv4-backend
@@ -22,7 +21,6 @@ services:
     networks:
       - shoppinglistv4
       - swarm-overlay
-      - postgres
 
   redis:
     image: redis:alpine
@@ -30,9 +28,6 @@ services:
       - shoppinglistv4
 
 networks:
-  postgres:
-    external: true
-    name: postgres_prod_postgres-prod
   shoppinglistv4:
     driver: overlay
   swarm-overlay:
