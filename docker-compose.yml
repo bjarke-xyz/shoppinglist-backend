@@ -26,6 +26,7 @@ services:
     image: redis:alpine
     networks:
       - shoppinglistv4
+      - swarm-overlay
 
 networks:
   shoppinglistv4:
