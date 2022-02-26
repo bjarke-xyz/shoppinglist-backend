@@ -22,12 +22,6 @@ services:
       - shoppinglistv4
       - swarm-overlay
 
-  redis:
-    image: redis:alpine
-    networks:
-      - shoppinglistv4
-      - swarm-overlay
-
 networks:
   shoppinglistv4:
     driver: overlay
