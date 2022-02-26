@@ -603,8 +603,8 @@
                 }
             }
         },
-        "/api/v1/lists/{list-id}/{item-id}": {
-            "patch": {
+        "/api/v1/lists/{list-id}/items/{item-id}": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -618,8 +618,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "lists",
-                    "items"
+                    "lists"
                 ],
                 "summary": "Add item to list",
                 "parameters": [
@@ -678,7 +677,7 @@
                 }
             }
         },
-        "/api/v1/lists/{list-id}/{list-item-id}": {
+        "/api/v1/lists/{list-id}/items/{list-item-id}": {
             "put": {
                 "security": [
                     {
@@ -693,8 +692,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "lists",
-                    "items"
+                    "lists"
                 ],
                 "summary": "Update list item",
                 "parameters": [
@@ -775,8 +773,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "lists",
-                    "items"
+                    "lists"
                 ],
                 "summary": "Remove item from list",
                 "parameters": [

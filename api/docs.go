@@ -620,8 +620,8 @@ var doc = `{
                 }
             }
         },
-        "/api/v1/lists/{list-id}/{item-id}": {
-            "patch": {
+        "/api/v1/lists/{list-id}/items/{item-id}": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -635,8 +635,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists",
-                    "items"
+                    "lists"
                 ],
                 "summary": "Add item to list",
                 "parameters": [
@@ -695,7 +694,7 @@ var doc = `{
                 }
             }
         },
-        "/api/v1/lists/{list-id}/{list-item-id}": {
+        "/api/v1/lists/{list-id}/items/{list-item-id}": {
             "put": {
                 "security": [
                     {
@@ -710,8 +709,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists",
-                    "items"
+                    "lists"
                 ],
                 "summary": "Update list item",
                 "parameters": [
@@ -792,8 +790,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists",
-                    "items"
+                    "lists"
                 ],
                 "summary": "Remove item from list",
                 "parameters": [

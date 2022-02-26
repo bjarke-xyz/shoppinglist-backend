@@ -50,13 +50,16 @@ func PrivateRoutes(app *application.Application, r *mux.Router) {
 	lists.HandleFunc("/{id}/items/{listItemId}", listsHandler.UpdateListItem(listHub, app)).Methods("PUT")
 	lists.HandleFunc("/{id}/items/{listItemId}", listsHandler.RemoveItemFromList(listHub, app)).Methods("DELETE")
 
+	// SSE
+	sse := apiV1.PathPrefix("/sse").Subrouter()
+	sse.HandleFunc("/lists", listsHandler.ListEvents(app)).Methods("GET")
 }
 
 func SwaggerRoute(app *application.Application, r *mux.Router) {
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, r.URL.Opaque+"/swagger/index.html", http.StatusMovedPermanently)
 	}).Methods("GET")
-	r.PathPrefix("/swagger").Handler(httpSwagger.Handler(
+	r.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
 		httpSwagger.DeepLinking(true),
 		httpSwagger.DocExpansion("none"),
 		httpSwagger.DomID("#swagger-ui"),

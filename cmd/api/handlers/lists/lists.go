@@ -187,7 +187,7 @@ func SetDefaultList(app *application.Application) http.HandlerFunc {
 // AddItemToList func Add item to list
 // @Description Add item to list
 // @Summary Add item to list
-// @Tags lists, items
+// @Tags lists
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
@@ -197,7 +197,7 @@ func SetDefaultList(app *application.Application) http.HandlerFunc {
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
-// @Router /api/v1/lists/{list-id}/{item-id} [patch]
+// @Router /api/v1/lists/{list-id}/items/{item-id} [post]
 func AddItemToList(hub *websocket.Hub, app *application.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
@@ -237,7 +237,7 @@ func AddItemToList(hub *websocket.Hub, app *application.Application) http.Handle
 // UpdateListItem func Update list item
 // @Description Update list item
 // @Summary Update list item
-// @Tags lists, items
+// @Tags lists
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
@@ -248,7 +248,7 @@ func AddItemToList(hub *websocket.Hub, app *application.Application) http.Handle
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
-// @Router /api/v1/lists/{list-id}/{list-item-id} [put]
+// @Router /api/v1/lists/{list-id}/items/{list-item-id} [put]
 func UpdateListItem(hub *websocket.Hub, app *application.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
@@ -294,7 +294,7 @@ func UpdateListItem(hub *websocket.Hub, app *application.Application) http.Handl
 // RemoveItemFromList func Remove item from list
 // @Description Remove item from list
 // @Summary Remove item from list
-// @Tags lists, items
+// @Tags lists
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
@@ -304,7 +304,7 @@ func UpdateListItem(hub *websocket.Hub, app *application.Application) http.Handl
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
-// @Router /api/v1/lists/{list-id}/{list-item-id} [delete]
+// @Router /api/v1/lists/{list-id}/items/{list-item-id} [delete]
 func RemoveItemFromList(hub *websocket.Hub, app *application.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
