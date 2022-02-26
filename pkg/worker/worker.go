@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const Namespace = "ShoppingListV4"
+const Namespace = "ShoppingListV4.Worker"
 
 type WorkerContext struct {
 	App *application.Application
