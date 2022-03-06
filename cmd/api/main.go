@@ -22,7 +22,11 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		log.Printf("Error loading .env file: %v", err)
+	}
+	err = godotenv.Load("/run/secrets/env")
+	if err != nil {
+		log.Printf("Error loading /run/secrets/env file: %v", err)
 	}
 	cfg := config.New()
 	logger.SetLogs(zap.DebugLevel, cfg.LogFormat)
