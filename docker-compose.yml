@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   backend:
-    image: registry.bjarke.xyz/shoppinglistv4-backend
+    image: registry.bjarke.xyz/shoppinglist-backend
     build:
       context: ./
     deploy:
@@ -10,11 +10,10 @@ services:
     secrets:
       - env
     networks:
-      - shoppinglistv4
       - swarm-overlay
 
   worker:
-    image: registry.bjarke.xyz/shoppinglistv4-backend
+    image: registry.bjarke.xyz/shoppinglist-backend
     entrypoint: /shoppinglist-backend-worker
     build:
       context: ./
@@ -23,12 +22,9 @@ services:
     secrets:
       - env
     networks:
-      - shoppinglistv4
       - swarm-overlay
 
 networks:
-  shoppinglistv4:
-    driver: overlay
   swarm-overlay:
     external: true
     name: swarm-overlay
