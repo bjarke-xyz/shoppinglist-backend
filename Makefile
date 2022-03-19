@@ -1,7 +1,5 @@
 .PHONY: clean swag build
 
-include .env
-
 APP_NAME = shoppinglist-backend
 BUILD_DIR = $(PWD)/build
 MIGRATIONS_FOLDER = $(PWD)/db/migrations

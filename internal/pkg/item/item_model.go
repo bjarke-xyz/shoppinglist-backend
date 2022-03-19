@@ -19,11 +19,3 @@ type Item struct {
 type AddItem struct {
 	Name string `json:"name"`
 }
-
-type ItemResponse struct {
-	Data Item `json:"data"`
-}
-
-type ItemsResponse struct {
-	Data []Item `json:"data"`
-}

@@ -45,7 +45,22 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/item.ItemsResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/item.Item"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -94,7 +109,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/item.ItemResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/item.Item"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -152,7 +179,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/item.ItemResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/item.Item"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -245,7 +284,22 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListsResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/list.List"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -294,7 +348,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.List"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -334,7 +400,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.DefaultListResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.DefaultList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -392,7 +470,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.List"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -494,7 +584,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.DefaultList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -518,8 +620,8 @@ var doc = `{
                 }
             }
         },
-        "/api/v1/lists/{list-id}/{item-id}": {
-            "patch": {
+        "/api/v1/lists/{list-id}/items/{item-id}": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -533,8 +635,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists",
-                    "items"
+                    "lists"
                 ],
                 "summary": "Add item to list",
                 "parameters": [
@@ -557,7 +658,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListItemResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.ListItem"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -581,7 +694,7 @@ var doc = `{
                 }
             }
         },
-        "/api/v1/lists/{list-id}/{list-item-id}": {
+        "/api/v1/lists/{list-id}/items/{list-item-id}": {
             "put": {
                 "security": [
                     {
@@ -596,8 +709,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists",
-                    "items"
+                    "lists"
                 ],
                 "summary": "Update list item",
                 "parameters": [
@@ -629,7 +741,19 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListItemResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/list.ListItem"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -666,8 +790,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists",
-                    "items"
+                    "lists"
                 ],
                 "summary": "Remove item from list",
                 "parameters": [
@@ -716,6 +839,12 @@ var doc = `{
         }
     },
     "definitions": {
+        "common.Response": {
+            "type": "object",
+            "properties": {
+                "data": {}
+            }
+        },
         "item.AddItem": {
             "type": "object",
             "properties": {
@@ -750,25 +879,6 @@ var doc = `{
                 }
             }
         },
-        "item.ItemResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/item.Item"
-                }
-            }
-        },
-        "item.ItemsResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/item.Item"
-                    }
-                }
-            }
-        },
         "list.AddList": {
             "type": "object",
             "properties": {
@@ -794,14 +904,6 @@ var doc = `{
                 },
                 "userId": {
                     "type": "string"
-                }
-            }
-        },
-        "list.DefaultListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/list.DefaultList"
                 }
             }
         },
@@ -863,33 +965,6 @@ var doc = `{
                 }
             }
         },
-        "list.ListItemResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/list.ListItem"
-                }
-            }
-        },
-        "list.ListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/list.List"
-                }
-            }
-        },
-        "list.ListsResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/list.List"
-                    }
-                }
-            }
-        },
         "list.UpdateListItem": {
             "type": "object",
             "properties": {
@@ -930,11 +1005,11 @@ type swaggerInfo struct {
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
-	Version:     "",
+	Version:     "1.0",
 	Host:        "",
 	BasePath:    "",
 	Schemes:     []string{},
-	Title:       "",
+	Title:       "ShoppingList V4 Backend API",
 	Description: "",
 }
 

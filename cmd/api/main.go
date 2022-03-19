@@ -6,15 +6,16 @@ import (
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/config"
 	"ShoppingList-Backend/pkg/logger"
-	"ShoppingList-Backend/pkg/middleware"
 	"ShoppingList-Backend/pkg/server"
 	"log"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
+// @title ShoppingList V4 Backend API
+// @version 1.0
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
@@ -40,14 +41,10 @@ func main() {
 		migration.DoMigration("up", cfg.GetDBConnStr())
 	}
 
-	fiberConfig := config.FiberConfig(app.Cfg)
+	r := mux.NewRouter().StrictSlash(true)
 
-	fiberApp := fiber.New(fiberConfig)
+	router.SwaggerRoute(app, r)
+	router.PrivateRoutes(app, r)
 
-	middleware.FiberMiddleware(fiberApp)
-
-	router.SwaggerRoute(fiberApp, app)
-	router.PrivateRoutes(fiberApp, app)
-
-	server.Start(fiberApp, app)
+	server.Start(app.Cfg, r)
 }

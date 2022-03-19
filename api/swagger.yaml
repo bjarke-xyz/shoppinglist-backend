@@ -1,4 +1,8 @@
 definitions:
+  common.Response:
+    properties:
+      data: {}
+    type: object
   item.AddItem:
     properties:
       name:
@@ -21,18 +25,6 @@ definitions:
     required:
     - id
     type: object
-  item.ItemResponse:
-    properties:
-      data:
-        $ref: '#/definitions/item.Item'
-    type: object
-  item.ItemsResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/item.Item'
-        type: array
-    type: object
   list.AddList:
     properties:
       name:
@@ -50,11 +42,6 @@ definitions:
         type: string
       userId:
         type: string
-    type: object
-  list.DefaultListResponse:
-    properties:
-      data:
-        $ref: '#/definitions/list.DefaultList'
     type: object
   list.List:
     properties:
@@ -94,23 +81,6 @@ definitions:
       updatedAt:
         type: string
     type: object
-  list.ListItemResponse:
-    properties:
-      data:
-        $ref: '#/definitions/list.ListItem'
-    type: object
-  list.ListResponse:
-    properties:
-      data:
-        $ref: '#/definitions/list.List'
-    type: object
-  list.ListsResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/list.List'
-        type: array
-    type: object
   list.UpdateListItem:
     properties:
       crossed:
@@ -125,6 +95,8 @@ definitions:
     type: object
 info:
   contact: {}
+  title: ShoppingList V4 Backend API
+  version: "1.0"
 paths:
   /api/v1/items:
     get:
@@ -137,7 +109,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/item.ItemsResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/item.Item'
+                  type: array
+              type: object
         "404":
           description: Not Found
           schema:
@@ -168,7 +147,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/item.ItemResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/item.Item'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -235,7 +219,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/item.ItemResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/item.Item'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -264,7 +253,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListsResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/list.List'
+                  type: array
+              type: object
         "404":
           description: Not Found
           schema:
@@ -295,7 +291,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.List'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -362,7 +363,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.List'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -397,7 +403,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.DefaultList'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -415,8 +426,8 @@ paths:
       summary: set default list
       tags:
       - lists
-  /api/v1/lists/{list-id}/{item-id}:
-    patch:
+  /api/v1/lists/{list-id}/items/{item-id}:
+    post:
       consumes:
       - application/json
       description: Add item to list
@@ -437,7 +448,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListItemResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.ListItem'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -455,8 +471,7 @@ paths:
       summary: Add item to list
       tags:
       - lists
-      - items
-  /api/v1/lists/{list-id}/{list-item-id}:
+  /api/v1/lists/{list-id}/items/{list-item-id}:
     delete:
       consumes:
       - application/json
@@ -496,7 +511,6 @@ paths:
       summary: Remove item from list
       tags:
       - lists
-      - items
     put:
       consumes:
       - application/json
@@ -524,7 +538,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListItemResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.ListItem'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -542,7 +561,6 @@ paths:
       summary: Update list item
       tags:
       - lists
-      - items
   /api/v1/lists/default:
     get:
       consumes:
@@ -554,7 +572,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.DefaultListResponse'
+            allOf:
+            - $ref: '#/definitions/common.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/list.DefaultList'
+              type: object
         "404":
           description: Not Found
           schema:
