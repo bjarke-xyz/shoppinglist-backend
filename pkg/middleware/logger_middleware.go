@@ -30,7 +30,9 @@ type Config struct {
 // Minimal wrapper around http.ResponseWriter to capture http status code
 type responseWriter struct {
 	http.ResponseWriter
-	hijacker http.Hijacker
+	flusher       http.Flusher
+	hijacker      http.Hijacker
+	closeNotifier http.CloseNotifier
 
 	status      int
 	wroteHeader bool
@@ -47,7 +49,9 @@ var (
 
 func wrapResponseWriter(w http.ResponseWriter) *responseWriter {
 	hijacker, _ := w.(http.Hijacker)
-	return &responseWriter{ResponseWriter: w, hijacker: hijacker}
+	flusher, _ := w.(http.Flusher)
+	closeNotifier, _ := w.(http.CloseNotifier)
+	return &responseWriter{ResponseWriter: w, hijacker: hijacker, flusher: flusher, closeNotifier: closeNotifier}
 }
 
 func (rw *responseWriter) Status() int {
@@ -70,6 +74,19 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return nil, nil, errors.New("http.Hijacker not implemenetd by underlying http.ResponseWriter")
 	}
 	return rw.hijacker.Hijack()
+}
+
+func (rw *responseWriter) Flush() {
+	if rw.flusher != nil {
+		rw.flusher.Flush()
+	}
+}
+
+func (rw *responseWriter) CloseNotify() <-chan bool {
+	if rw.closeNotifier != nil {
+		return rw.closeNotifier.CloseNotify()
+	}
+	return nil
 }
 
 func configDefault(config ...Config) Config {

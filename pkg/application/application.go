@@ -6,6 +6,7 @@ import (
 	"ShoppingList-Backend/pkg/config"
 	"ShoppingList-Backend/pkg/db"
 	"ShoppingList-Backend/pkg/server"
+	"ShoppingList-Backend/pkg/sse"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -16,6 +17,7 @@ type Application struct {
 	Controllers *Controllers
 	Redis       *redis.Pool
 	Srv         *server.Server
+	SseBroker   *sse.Broker
 }
 
 func Get(cfg *config.Config) (*Application, error) {
@@ -47,10 +49,13 @@ func Get(cfg *config.Config) (*Application, error) {
 		},
 	}
 
+	sseBroker := sse.NewBroker()
+
 	return &Application{
 		Cfg:         cfg,
 		Queries:     repos,
 		Redis:       redisPool,
 		Controllers: controllers,
+		SseBroker:   sseBroker,
 	}, nil
 }

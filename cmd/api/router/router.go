@@ -5,7 +5,6 @@ import (
 	listsHandler "ShoppingList-Backend/cmd/api/handlers/lists"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/middleware"
-	"ShoppingList-Backend/pkg/websocket"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -19,6 +18,8 @@ import (
 
 func PrivateRoutes(app *application.Application, r *mux.Router) {
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
+
+	// loggerMiddleware := middleware.NewZapLogger(middleware.Config{RedactedQueryParams: []string{"Authorization"}})
 
 	apiV1.Use(middleware.NewZapLogger(middleware.Config{RedactedQueryParams: []string{"Authorization"}}))
 
@@ -35,24 +36,20 @@ func PrivateRoutes(app *application.Application, r *mux.Router) {
 	lists := apiV1.PathPrefix("/lists").Subrouter()
 	lists.Use(middleware.JWTProtected(app.Cfg))
 
-	listHub := websocket.NewHub()
-	go listHub.Run()
-	listsWs := lists.PathPrefix("/ws").Subrouter()
-	listsWs.HandleFunc("/default", listsHandler.WsOnListChanges(listHub, app))
-
 	lists.HandleFunc("", listsHandler.GetLists(app)).Methods("GET")
 	lists.HandleFunc("/default", listsHandler.GetDefaultList(app)).Methods("GET")
 	lists.HandleFunc("", listsHandler.CreateList(app)).Methods("POST")
-	lists.HandleFunc("/{id}", listsHandler.UpdateList(listHub, app)).Methods("PUT")
+	lists.HandleFunc("/{id}", listsHandler.UpdateList(app)).Methods("PUT")
 	lists.HandleFunc("/{id}/default", listsHandler.SetDefaultList(app)).Methods("PUT")
 	lists.HandleFunc("/{id}", listsHandler.DeleteList(app)).Methods("DELETE")
-	lists.HandleFunc("/{id}/items/{itemId}", listsHandler.AddItemToList(listHub, app)).Methods("POST")
-	lists.HandleFunc("/{id}/items/{listItemId}", listsHandler.UpdateListItem(listHub, app)).Methods("PUT")
-	lists.HandleFunc("/{id}/items/{listItemId}", listsHandler.RemoveItemFromList(listHub, app)).Methods("DELETE")
+	lists.HandleFunc("/{id}/items/{itemId}", listsHandler.AddItemToList(app)).Methods("POST")
+	lists.HandleFunc("/{id}/items/{listItemId}", listsHandler.UpdateListItem(app)).Methods("PUT")
+	lists.HandleFunc("/{id}/items/{listItemId}", listsHandler.RemoveItemFromList(app)).Methods("DELETE")
 
 	// SSE
 	sse := apiV1.PathPrefix("/sse").Subrouter()
-	sse.HandleFunc("/lists", listsHandler.ListEvents(app)).Methods("GET")
+	sse.Use(middleware.JWTProtected(app.Cfg))
+	sse.HandleFunc("/", app.SseBroker.Handle).Methods("GET")
 }
 
 func SwaggerRoute(app *application.Application, r *mux.Router) {

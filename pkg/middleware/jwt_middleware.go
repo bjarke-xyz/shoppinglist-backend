@@ -4,6 +4,7 @@ import (
 	"ShoppingList-Backend/internal/pkg/user"
 	"ShoppingList-Backend/pkg/config"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strings"
@@ -48,7 +49,11 @@ func JWTProtected(cfg *config.Config) mux.MiddlewareFunc {
 
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				authHeader = r.URL.Query().Get("Authorization")
+				authHeaderQueryParam := r.URL.Query().Get("Authorization")
+				authHeaderBytes, err := base64.StdEncoding.DecodeString(authHeaderQueryParam)
+				if err == nil {
+					authHeader = string(authHeaderBytes)
+				}
 			}
 			if !strings.Contains(authHeader, "Bearer") {
 				http.Error(w, "Forbidden", http.StatusForbidden)

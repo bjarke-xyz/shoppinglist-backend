@@ -5,7 +5,7 @@ import (
 	"ShoppingList-Backend/internal/pkg/list"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/middleware"
-	"ShoppingList-Backend/pkg/websocket"
+	"ShoppingList-Backend/pkg/sse"
 	"fmt"
 	"net/http"
 
@@ -113,7 +113,7 @@ func CreateList(app *application.Application) http.HandlerFunc {
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{id} [put]
-func UpdateList(hub *websocket.Hub, app *application.Application) http.HandlerFunc {
+func UpdateList(app *application.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		idStr := params["id"]
@@ -137,10 +137,13 @@ func UpdateList(hub *websocket.Hub, app *application.Application) http.HandlerFu
 			return
 		}
 
-		hub.EmitEvent(websocket.EventPayload{
-			EventType: list.EventListUpdated,
-			EventData: updatedList,
-		}, sessionInfoHasListId(id))
+		app.SseBroker.Notifier <- sse.NewNotification(
+			sse.CreateEvent(sse.BrokerEvent[*list.List]{
+				EventType: list.EventListUpdated,
+				EventData: updatedList,
+			}),
+			clientFilter([]string{appUser.ID}),
+		)
 
 		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: updatedList,
@@ -198,7 +201,7 @@ func SetDefaultList(app *application.Application) http.HandlerFunc {
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{list-id}/items/{item-id} [post]
-func AddItemToList(hub *websocket.Hub, app *application.Application) http.HandlerFunc {
+func AddItemToList(app *application.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		listIdStr := params["id"]
@@ -223,10 +226,13 @@ func AddItemToList(hub *websocket.Hub, app *application.Application) http.Handle
 			return
 		}
 
-		hub.EmitEvent(websocket.EventPayload{
-			EventType: list.EventListItemsAdded,
-			EventData: listItem,
-		}, sessionInfoHasListId(listId))
+		app.SseBroker.Notifier <- sse.NewNotification(
+			sse.CreateEvent(sse.BrokerEvent[*list.ListItem]{
+				EventType: list.EventListItemsAdded,
+				EventData: listItem,
+			}),
+			clientFilter([]string{user.ID}),
+		)
 
 		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: listItem,
@@ -249,7 +255,7 @@ func AddItemToList(hub *websocket.Hub, app *application.Application) http.Handle
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{list-id}/items/{list-item-id} [put]
-func UpdateListItem(hub *websocket.Hub, app *application.Application) http.HandlerFunc {
+func UpdateListItem(app *application.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		listIdStr := params["id"]
@@ -280,10 +286,13 @@ func UpdateListItem(hub *websocket.Hub, app *application.Application) http.Handl
 			return
 		}
 
-		hub.EmitEvent(websocket.EventPayload{
-			EventType: list.EventListItemsUpdated,
-			EventData: updatedListItem,
-		}, sessionInfoHasListId(listId))
+		app.SseBroker.Notifier <- sse.NewNotification(
+			sse.CreateEvent(sse.BrokerEvent[*list.ListItem]{
+				EventType: list.EventListItemsUpdated,
+				EventData: updatedListItem,
+			}),
+			clientFilter([]string{user.ID}),
+		)
 
 		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: updatedListItem,
@@ -305,7 +314,7 @@ func UpdateListItem(hub *websocket.Hub, app *application.Application) http.Handl
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{list-id}/items/{list-item-id} [delete]
-func RemoveItemFromList(hub *websocket.Hub, app *application.Application) http.HandlerFunc {
+func RemoveItemFromList(app *application.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		listIdStr := params["id"]
@@ -329,10 +338,13 @@ func RemoveItemFromList(hub *websocket.Hub, app *application.Application) http.H
 			return
 		}
 
-		hub.EmitEvent(websocket.EventPayload{
-			EventType: list.EventListItemsRemoved,
-			EventData: listItemId,
-		}, sessionInfoHasListId(listId))
+		app.SseBroker.Notifier <- sse.NewNotification(
+			sse.CreateEvent(sse.BrokerEvent[uuid.UUID]{
+				EventType: list.EventListItemsRemoved,
+				EventData: listItemId,
+			}),
+			clientFilter([]string{user.ID}),
+		)
 
 		app.Srv.Respond(w, r, http.StatusNoContent, nil)
 	}
@@ -368,5 +380,19 @@ func DeleteList(app *application.Application) http.HandlerFunc {
 		}
 
 		app.Srv.Respond(w, r, http.StatusNoContent, nil)
+	}
+}
+
+func clientFilter(allowedUserIds []string) sse.ClientFilter {
+	return func(c *sse.Client) bool {
+		if c.User == nil || len(allowedUserIds) == 0 {
+			return false
+		}
+		for _, userId := range allowedUserIds {
+			if c.User.ID == userId {
+				return true
+			}
+		}
+		return false
 	}
 }
