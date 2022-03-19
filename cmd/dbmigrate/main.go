@@ -11,6 +11,7 @@ import (
 
 func main() {
 	godotenv.Load()
+	godotenv.Load("/run/secrets/env")
 	cfg := config.New()
 	logger.SetLogs(zap.DebugLevel, cfg.LogFormat)
 	log := zap.S()

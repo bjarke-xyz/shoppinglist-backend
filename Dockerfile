@@ -17,7 +17,7 @@ FROM scratch
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /build/db/migrations /db/migrations
-COPY --from=builder ["/build/shoppinglist-backend-api", "/build/shoppinglist-backend-migrate", "/build/shoppinglist-backend-worker", "/build/.env", "/"]
+COPY --from=builder ["/build/shoppinglist-backend-api", "/build/shoppinglist-backend-migrate", "/build/shoppinglist-backend-worker", "/build/.env*", "/"]
 
 ENTRYPOINT ["/shoppinglist-backend-api"]
 
