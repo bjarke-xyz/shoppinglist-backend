@@ -16,7 +16,7 @@ type Server struct{}
 func Start(cfg *config.Config, r *mux.Router) {
 
 	handler := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://slv4.bjarke.xyz", "http://localhost:3000", "http://localhost:4200"},
+		AllowedOrigins: []string{"*"}, // TODO: Maybe consider not allowing all origins. For now it's fine
 		AllowedHeaders: []string{"Authorization", "Content-Type"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		Debug:          false,
