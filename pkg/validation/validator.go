@@ -1,4 +1,6 @@
-package utils
+package validation
+
+// TODO: fix bad package name
 
 import (
 	"github.com/go-playground/validator/v10"

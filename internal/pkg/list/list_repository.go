@@ -10,11 +10,11 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type ListQueries struct {
+type ListRepository struct {
 	DB *sqlx.DB
 }
 
-func (q *ListQueries) getListItems(listIds []uuid.UUID) ([]ListItem, error) {
+func (q *ListRepository) getListItems(listIds []uuid.UUID) ([]ListItem, error) {
 	listItems := []ListItem{}
 	query, args, err := sqlx.In(`SELECT * FROM list_item WHERE list_id IN (?)`, listIds)
 	if err != nil {
@@ -30,7 +30,7 @@ func (q *ListQueries) getListItems(listIds []uuid.UUID) ([]ListItem, error) {
 	return listItems, nil
 }
 
-func (q *ListQueries) getItems(itemIds []uuid.UUID) ([]item.Item, error) {
+func (q *ListRepository) getItems(itemIds []uuid.UUID) ([]item.Item, error) {
 	items := []item.Item{}
 	query, args, err := sqlx.In(`SELECT * FROM items WHERE id IN (?)`, itemIds)
 	if err != nil {
@@ -45,7 +45,7 @@ func (q *ListQueries) getItems(itemIds []uuid.UUID) ([]item.Item, error) {
 	return items, nil
 }
 
-func (q *ListQueries) populateWithItems(lists []List) error {
+func (q *ListRepository) populateWithItems(lists []List) error {
 	// Get ListItems
 	listIds := make([]uuid.UUID, len(lists))
 	for _, list := range lists {
@@ -92,7 +92,7 @@ func (q *ListQueries) populateWithItems(lists []List) error {
 	return nil
 }
 
-func (q *ListQueries) GetLists(owner user.AppUser) ([]List, error) {
+func (q *ListRepository) GetLists(owner *user.AppUser) ([]List, error) {
 	lists := []List{}
 
 	query := `SELECT * FROM lists WHERE owner_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC`
@@ -114,7 +114,7 @@ func (q *ListQueries) GetLists(owner user.AppUser) ([]List, error) {
 	return lists, nil
 }
 
-func (q *ListQueries) DeleteLists(ownerID string) error {
+func (q *ListRepository) DeleteLists(ownerID string) error {
 	query := `DELETE FROM LISTS where owner_id = $1`
 	_, err := q.DB.Exec(query, ownerID)
 	if err != nil {
@@ -123,7 +123,7 @@ func (q *ListQueries) DeleteLists(ownerID string) error {
 	return nil
 }
 
-func (q *ListQueries) GetList(id uuid.UUID, appUser user.AppUser) (List, error) {
+func (q *ListRepository) GetList(id uuid.UUID, appUser *user.AppUser) (List, error) {
 	list := List{}
 
 	query := `SELECT * FROM lists WHERE id = $1 AND deleted_at IS NULL LIMIT 1`
@@ -148,7 +148,7 @@ func (q *ListQueries) GetList(id uuid.UUID, appUser user.AppUser) (List, error) 
 	return lists[0], err
 }
 
-func (q *ListQueries) CreateList(list List) (uuid.UUID, error) {
+func (q *ListRepository) CreateList(list List) (uuid.UUID, error) {
 	query := `INSERT INTO lists (id, name, owner_id) VALUES ($1, $2, $3)`
 	_, err := q.DB.Exec(query, list.ID, list.Name, list.OwnerID)
 	if err != nil {
@@ -158,7 +158,7 @@ func (q *ListQueries) CreateList(list List) (uuid.UUID, error) {
 	return list.ID, nil
 }
 
-func (q *ListQueries) UpdateList(list List) error {
+func (q *ListRepository) UpdateList(list List) error {
 	query := `UPDATE lists SET updated_at = NOW(), name = $2 WHERE id = $1`
 	_, err := q.DB.Exec(query, list.ID, list.Name)
 	if err != nil {
@@ -167,7 +167,7 @@ func (q *ListQueries) UpdateList(list List) error {
 	return nil
 }
 
-func (q *ListQueries) AddItemToList(list List, item item.Item) (ListItem, error) {
+func (q *ListRepository) AddItemToList(list List, item item.Item) (ListItem, error) {
 	listItem := ListItem{ID: uuid.New()}
 	query := `INSERT INTO list_item (id, list_id, item_id) VALUES ($1, $2, $3)`
 	_, err := q.DB.Exec(query, listItem.ID, list.ID, item.ID)
@@ -183,7 +183,7 @@ func (q *ListQueries) AddItemToList(list List, item item.Item) (ListItem, error)
 	return listItem, nil
 }
 
-func (q *ListQueries) UpdateListItem(listItem ListItem) error {
+func (q *ListRepository) UpdateListItem(listItem ListItem) error {
 	query := `UPDATE list_item SET updated_at = NOW(), crossed = $1 WHERE id = $2`
 	_, err := q.DB.Exec(query, listItem.Crossed, listItem.ID)
 	if err != nil {
@@ -192,7 +192,7 @@ func (q *ListQueries) UpdateListItem(listItem ListItem) error {
 	return nil
 }
 
-func (q *ListQueries) GetListItem(id uuid.UUID) (ListItem, error) {
+func (q *ListRepository) GetListItem(id uuid.UUID) (ListItem, error) {
 	listItem := ListItem{}
 	query := `SELECT * FROM list_item where id = $1`
 	err := q.DB.Get(&listItem, query, id)
@@ -209,7 +209,7 @@ func (q *ListQueries) GetListItem(id uuid.UUID) (ListItem, error) {
 	return listItem, nil
 }
 
-func (q *ListQueries) RemoveItemFromList(id uuid.UUID) error {
+func (q *ListRepository) RemoveItemFromList(id uuid.UUID) error {
 	query := `DELETE FROM list_item WHERE id = $1`
 	_, err := q.DB.Exec(query, id)
 	if err != nil {
@@ -218,7 +218,7 @@ func (q *ListQueries) RemoveItemFromList(id uuid.UUID) error {
 	return nil
 }
 
-func (q *ListQueries) DeleteList(list List) error {
+func (q *ListRepository) DeleteList(list List) error {
 	query := `UPDATE lists SET deleted_at = NOW() WHERE id = $1`
 	_, err := q.DB.Exec(query, list.ID)
 	if err != nil {
@@ -227,7 +227,7 @@ func (q *ListQueries) DeleteList(list List) error {
 	return nil
 }
 
-func (q *ListQueries) GetDefaultList(user user.AppUser) (DefaultList, error) {
+func (q *ListRepository) GetDefaultList(user *user.AppUser) (DefaultList, error) {
 	fetchQuery := `SELECT * FROM default_lists WHERE app_user_id = $1 LIMIT 1`
 	defaultList := DefaultList{}
 	err := q.DB.Get(&defaultList, fetchQuery, user.ID)
@@ -237,7 +237,7 @@ func (q *ListQueries) GetDefaultList(user user.AppUser) (DefaultList, error) {
 	return defaultList, nil
 }
 
-func (q *ListQueries) SetDefaultList(user user.AppUser, list List) (DefaultList, error) {
+func (q *ListRepository) SetDefaultList(user *user.AppUser, list List) (DefaultList, error) {
 	fetchQuery := `SELECT * FROM default_lists WHERE app_user_id = $1 LIMIT 1`
 	currentDefaultList := DefaultList{}
 	err := q.DB.Get(&currentDefaultList, fetchQuery, user.ID)

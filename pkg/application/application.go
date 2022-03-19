@@ -3,17 +3,21 @@ package application
 import (
 	"ShoppingList-Backend/internal/pkg/item"
 	"ShoppingList-Backend/internal/pkg/list"
-	"ShoppingList-Backend/internal/pkg/queries"
 	"ShoppingList-Backend/pkg/config"
 	"ShoppingList-Backend/pkg/db"
+	"ShoppingList-Backend/pkg/server"
+	"ShoppingList-Backend/pkg/sse"
 
 	"github.com/gomodule/redigo/redis"
 )
 
 type Application struct {
-	Cfg     *config.Config
-	Queries *queries.Queries
-	Redis   *redis.Pool
+	Cfg         *config.Config
+	Queries     *Repositories
+	Controllers *Controllers
+	Redis       *redis.Pool
+	Srv         *server.Server
+	SseBroker   *sse.Broker
 }
 
 func Get(cfg *config.Config) (*Application, error) {
@@ -22,13 +26,18 @@ func Get(cfg *config.Config) (*Application, error) {
 		return nil, err
 	}
 
-	queries := &queries.Queries{
-		Item: &item.ItemQueries{
+	repos := &Repositories{
+		Item: &item.ItemRepository{
 			DB: db.Client,
 		},
-		List: &list.ListQueries{
+		List: &list.ListRepository{
 			DB: db.Client,
 		},
+	}
+
+	controllers := &Controllers{
+		Item: item.NewItemController(repos.Item),
+		List: list.NewListController(repos.Item, repos.List),
 	}
 
 	var redisPool = &redis.Pool{
@@ -40,9 +49,13 @@ func Get(cfg *config.Config) (*Application, error) {
 		},
 	}
 
+	sseBroker := sse.NewBroker()
+
 	return &Application{
-		Cfg:     cfg,
-		Queries: queries,
-		Redis:   redisPool,
+		Cfg:         cfg,
+		Queries:     repos,
+		Redis:       redisPool,
+		Controllers: controllers,
+		SseBroker:   sseBroker,
 	}, nil
 }

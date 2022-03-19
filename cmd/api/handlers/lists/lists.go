@@ -1,15 +1,16 @@
-package controller
+package lists
 
 import (
+	"ShoppingList-Backend/internal/pkg/common"
 	"ShoppingList-Backend/internal/pkg/list"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/middleware"
-	"ShoppingList-Backend/pkg/server"
-	"ShoppingList-Backend/pkg/utils"
-	"database/sql"
+	"ShoppingList-Backend/pkg/sse"
+	"fmt"
+	"net/http"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 // GetLists func gets all lists for user
@@ -19,23 +20,20 @@ import (
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} list.ListsResponse
+// @Success 200 {object} common.Response{data=[]list.List}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Router /api/v1/lists [get]
-func GetLists(app *application.Application) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		appUser := middleware.GetAppUser(c)
-
-		lists, err := app.Queries.List.GetLists(appUser)
+func GetLists(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		appUser := middleware.UserFromContext(r.Context())
+		lists, err := app.Controllers.List.GetLists(appUser)
 		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, err.StatusCode, err.Err)
+			return
 		}
 
-		return c.JSON(list.ListsResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: lists,
 		})
 	}
@@ -48,29 +46,20 @@ func GetLists(app *application.Application) func(*fiber.Ctx) error {
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} list.DefaultListResponse
+// @Success 200 {object} common.Response{data=list.DefaultList}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Router /api/v1/lists/default [get]
-func GetDefaultList(app *application.Application) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		appUser := middleware.GetAppUser(c)
-		defaultList, err := app.Queries.List.GetDefaultList(appUser)
+func GetDefaultList(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		appUser := middleware.UserFromContext(r.Context())
+		defaultList, err := app.Controllers.List.GetDefaultList(appUser)
 		if err != nil {
-			if err == sql.ErrNoRows {
-				return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-					Status: fiber.StatusNotFound,
-					Error:  err.Error(),
-				})
-			} else {
-				return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-					Status: fiber.StatusInternalServerError,
-					Error:  err.Error(),
-				})
-			}
+			app.Srv.RespondError(w, r, err.StatusCode, err.Err)
+			return
 		}
 
-		return c.JSON(list.DefaultListResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: defaultList,
 		})
 	}
@@ -84,57 +73,29 @@ func GetDefaultList(app *application.Application) func(*fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param list body list.AddList true "Add list"
-// @Success 200 {object} list.ListResponse
+// @Success 200 {object} common.Response{data=list.List}
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists [post]
-func CreateList(app *application.Application) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
+func CreateList(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		addList := &list.AddList{}
-		if err := c.BodyParser(addList); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+		if err := app.Srv.Decode(w, r, addList); err != nil {
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not decode body: %w", err))
+			return
 		}
 
-		validate := utils.NewValidator()
+		appUser := middleware.UserFromContext(r.Context())
 
-		appUser := middleware.GetAppUser(c)
-
-		listToCreate := list.List{
-			ID:      uuid.New(),
-			Name:    addList.Name,
-			OwnerID: appUser.ID,
-		}
-
-		if err := validate.Struct(addList); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
-		}
-
-		listId, err := app.Queries.List.CreateList(listToCreate)
+		createdList, err := app.Controllers.List.CreateList(appUser, addList)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, err.StatusCode, err.Err)
+			return
 		}
 
-		createdList, err := app.Queries.List.GetList(listId, appUser)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		return c.JSON(list.ListResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: createdList,
 		})
-
 	}
 }
 
@@ -147,57 +108,44 @@ func CreateList(app *application.Application) func(*fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "List ID"
 // @Param list body list.AddList true "Update list"
-// @Success 200 {object} list.ListResponse
+// @Success 200 {object} common.Response{data=list.List}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{id} [put]
-func UpdateList(app *application.Application) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		idStr := c.Params("id")
+func UpdateList(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		idStr := params["id"]
 		id, err := uuid.Parse(idStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse id %v: %w", idStr, err))
+			return
 		}
 
-		addList := &list.AddList{}
-		if err := c.BodyParser(addList); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+		updateList := &list.AddList{}
+		if err := app.Srv.Decode(w, r, updateList); err != nil {
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse body: %w", err))
+			return
 		}
 
-		appUser := middleware.GetAppUser(c)
-		foundList, err := app.Queries.List.GetList(id, appUser)
-		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
+		appUser := middleware.UserFromContext(r.Context())
+
+		updatedList, cErr := app.Controllers.List.UpdateList(appUser, id, updateList)
+		if cErr != nil {
+			app.Srv.RespondError(w, r, cErr.StatusCode, cErr.Err)
+			return
 		}
 
-		foundList.Name = addList.Name
+		app.SseBroker.Notifier <- sse.NewNotification(
+			sse.CreateEvent(sse.BrokerEvent[*list.List]{
+				EventType: list.EventListUpdated,
+				EventData: updatedList,
+			}),
+			clientFilter([]string{appUser.ID}),
+		)
 
-		if err := app.Queries.List.UpdateList(foundList); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		updatedList, err := app.Queries.List.GetList(id, appUser)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		return c.JSON(list.ListResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: updatedList,
 		})
 	}
@@ -211,40 +159,29 @@ func UpdateList(app *application.Application) func(*fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "List ID"
-// @Success 200 {object} list.ListResponse
+// @Success 200 {object} common.Response{data=list.DefaultList}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{id}/default [put]
-func SetDefaultList(app *application.Application) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		idStr := c.Params("id")
+func SetDefaultList(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		idStr := params["id"]
 		id, err := uuid.Parse(idStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse id %v: %w", idStr, err))
+			return
 		}
 
-		appUser := middleware.GetAppUser(c)
-		foundList, err := app.Queries.List.GetList(id, appUser)
-		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
+		appUser := middleware.UserFromContext(r.Context())
+		defaultList, cErr := app.Controllers.List.SetDefaultList(appUser, id)
+		if cErr != nil {
+			app.Srv.RespondError(w, r, cErr.StatusCode, cErr.Err)
+			return
 		}
 
-		defaultList, err := app.Queries.List.SetDefaultList(appUser, foundList)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		return c.JSON(list.DefaultListResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: defaultList,
 		})
 	}
@@ -253,63 +190,51 @@ func SetDefaultList(app *application.Application) func(*fiber.Ctx) error {
 // AddItemToList func Add item to list
 // @Description Add item to list
 // @Summary Add item to list
-// @Tags lists, items
+// @Tags lists
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param list-id path string true "List ID"
 // @Param item-id path string true "Item ID"
-// @Success 200 {object} list.ListItemResponse
+// @Success 200 {object} common.Response{data=list.ListItem}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
-// @Router /api/v1/lists/{list-id}/{item-id} [patch]
-func AddItemToList(app *application.Application) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		listIdStr := c.Params("id")
+// @Router /api/v1/lists/{list-id}/items/{item-id} [post]
+func AddItemToList(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		listIdStr := params["id"]
 		listId, err := uuid.Parse(listIdStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse list id %v: %w", listIdStr, err))
+			return
 		}
 
-		itemIdStr := c.Params("itemId")
+		itemIdStr := params["itemId"]
 		itemId, err := uuid.Parse(itemIdStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse item id %v: %w", itemIdStr, err))
+			return
 		}
 
-		appUser := middleware.GetAppUser(c)
-		foundList, err := app.Queries.List.GetList(listId, appUser)
-		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
+		user := middleware.UserFromContext(r.Context())
+
+		listItem, cErr := app.Controllers.List.AddItemToList(user, listId, itemId)
+		if cErr != nil {
+			app.Srv.RespondError(w, r, cErr.StatusCode, cErr.Err)
+			return
 		}
 
-		item, err := app.Queries.Item.GetItem(itemId)
-		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
-		}
+		app.SseBroker.Notifier <- sse.NewNotification(
+			sse.CreateEvent(sse.BrokerEvent[*list.ListItem]{
+				EventType: list.EventListItemsAdded,
+				EventData: listItem,
+			}),
+			clientFilter([]string{user.ID}),
+		)
 
-		listItem, err := app.Queries.List.AddItemToList(foundList, item)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		return c.JSON(list.ListItemResponse{
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: listItem,
 		})
 	}
@@ -318,73 +243,59 @@ func AddItemToList(app *application.Application) func(*fiber.Ctx) error {
 // UpdateListItem func Update list item
 // @Description Update list item
 // @Summary Update list item
-// @Tags lists, items
+// @Tags lists
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param list-id path string true "List ID"
 // @Param list-item-id path string true "List-Item ID"
 // @Param list body list.UpdateListItem true "Update list item"
-// @Success 200 {object} list.ListItemResponse
+// @Success 200 {object} common.Response{data=list.ListItem}
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
-// @Router /api/v1/lists/{list-id}/{list-item-id} [put]
-func UpdateListItem(app *application.Application) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		listIdStr := c.Params("id")
+// @Router /api/v1/lists/{list-id}/items/{list-item-id} [put]
+func UpdateListItem(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		listIdStr := params["id"]
 		listId, err := uuid.Parse(listIdStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse list id %v: %w", listIdStr, err))
+			return
 		}
 
-		listItemIdStr := c.Params("listItemId")
+		listItemIdStr := params["listItemId"]
 		listItemId, err := uuid.Parse(listItemIdStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse listitem id %v: %w", listItemIdStr, err))
+			return
 		}
 
 		updateListItem := &list.UpdateListItem{}
-		if err := c.BodyParser(updateListItem); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+		if err := app.Srv.Decode(w, r, updateListItem); err != nil {
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse body: %w", err))
+			return
 		}
 
-		appUser := middleware.GetAppUser(c)
-		if _, err := app.Queries.List.GetList(listId, appUser); err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
+		user := middleware.UserFromContext(r.Context())
+
+		updatedListItem, cErr := app.Controllers.List.UpdateListItem(user, listId, listItemId, updateListItem)
+		if cErr != nil {
+			app.Srv.RespondError(w, r, cErr.StatusCode, cErr.Err)
+			return
 		}
 
-		listItem, err := app.Queries.List.GetListItem(listItemId)
-		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
-		}
+		app.SseBroker.Notifier <- sse.NewNotification(
+			sse.CreateEvent(sse.BrokerEvent[*list.ListItem]{
+				EventType: list.EventListItemsUpdated,
+				EventData: updatedListItem,
+			}),
+			clientFilter([]string{user.ID}),
+		)
 
-		listItem.Crossed = updateListItem.Crossed
-
-		if err := app.Queries.List.UpdateListItem(listItem); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		return c.JSON(list.ListItemResponse{
-			Data: listItem,
+		app.Srv.Respond(w, r, http.StatusOK, common.Response{
+			Data: updatedListItem,
 		})
 	}
 }
@@ -392,7 +303,7 @@ func UpdateListItem(app *application.Application) func(*fiber.Ctx) error {
 // RemoveItemFromList func Remove item from list
 // @Description Remove item from list
 // @Summary Remove item from list
-// @Tags lists, items
+// @Tags lists
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
@@ -402,43 +313,40 @@ func UpdateListItem(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 500 {object} server.HTTPError
 // @Failure 404 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
-// @Router /api/v1/lists/{list-id}/{list-item-id} [delete]
-func RemoveItemFromList(app *application.Application) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		listIdStr := c.Params("id")
+// @Router /api/v1/lists/{list-id}/items/{list-item-id} [delete]
+func RemoveItemFromList(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		listIdStr := params["id"]
 		listId, err := uuid.Parse(listIdStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse list id %v: %w", listIdStr, err))
+			return
 		}
 
-		listItemIdStr := c.Params("listItemId")
+		listItemIdStr := params["listItemId"]
 		listItemId, err := uuid.Parse(listItemIdStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse listitem id %v: %w", listItemIdStr, err))
+			return
 		}
 
-		appUser := middleware.GetAppUser(c)
-		if _, err := app.Queries.List.GetList(listId, appUser); err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
+		user := middleware.UserFromContext(r.Context())
+
+		if cErr := app.Controllers.List.RemoveItemFromList(user, listId, listItemId); cErr != nil {
+			app.Srv.RespondError(w, r, cErr.StatusCode, cErr.Err)
+			return
 		}
 
-		if err := app.Queries.List.RemoveItemFromList(listItemId); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
+		app.SseBroker.Notifier <- sse.NewNotification(
+			sse.CreateEvent(sse.BrokerEvent[uuid.UUID]{
+				EventType: list.EventListItemsRemoved,
+				EventData: listItemId,
+			}),
+			clientFilter([]string{user.ID}),
+		)
 
-		return c.SendStatus(fiber.StatusNoContent)
+		app.Srv.Respond(w, r, http.StatusNoContent, nil)
 	}
 }
 
@@ -454,46 +362,37 @@ func RemoveItemFromList(app *application.Application) func(*fiber.Ctx) error {
 // @Failure 500 {object} server.HTTPError
 // @Failure 400 {object} server.HTTPError
 // @Router /api/v1/lists/{id} [delete]
-func DeleteList(app *application.Application) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		idStr := c.Params("id")
+func DeleteList(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		idStr := params["id"]
 		id, err := uuid.Parse(idStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse id %v: %w", idStr, err))
+			return
 		}
 
-		list := &list.List{
-			ID: id,
+		user := middleware.UserFromContext(r.Context())
+
+		if cErr := app.Controllers.List.DeleteList(user, id); cErr != nil {
+			app.Srv.RespondError(w, r, cErr.StatusCode, cErr.Err)
+			return
 		}
 
-		validate := utils.NewValidator()
+		app.Srv.Respond(w, r, http.StatusNoContent, nil)
+	}
+}
 
-		if err := validate.StructPartial(list, "id"); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(server.HTTPError{
-				Status: fiber.StatusBadRequest,
-				Error:  err.Error(),
-			})
+func clientFilter(allowedUserIds []string) sse.ClientFilter {
+	return func(c *sse.Client) bool {
+		if c.User == nil || len(allowedUserIds) == 0 {
+			return false
 		}
-
-		appUser := middleware.GetAppUser(c)
-		foundList, err := app.Queries.List.GetList(list.ID, appUser)
-		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(server.HTTPError{
-				Status: fiber.StatusNotFound,
-				Error:  err.Error(),
-			})
+		for _, userId := range allowedUserIds {
+			if c.User.ID == userId {
+				return true
+			}
 		}
-
-		if err := app.Queries.List.DeleteList(foundList); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(server.HTTPError{
-				Status: fiber.StatusInternalServerError,
-				Error:  err.Error(),
-			})
-		}
-
-		return c.SendStatus(fiber.StatusNoContent)
+		return false
 	}
 }
