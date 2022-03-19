@@ -29,6 +29,7 @@ type Config struct {
 	redisPort     string
 	redisUser     string
 	redisPassword string
+	redisPrefix   string
 
 	LogFormat string
 
@@ -64,6 +65,7 @@ func New() *Config {
 	flag.StringVar(&conf.redisPort, "redisport", os.Getenv("REDIS_PORT"), "Redis port")
 	flag.StringVar(&conf.redisUser, "redisuser", os.Getenv("REDIS_USER"), "Redis username")
 	flag.StringVar(&conf.redisPassword, "redispassword", os.Getenv("REDIS_PASSWORD"), "Redis password")
+	flag.StringVar(&conf.redisPrefix, "redisprefix", os.Getenv("REDIS_PREFIX"), "Redis key prefix")
 
 	flag.StringVar(&conf.LogFormat, "logformat", os.Getenv("LOG_FORMAT"), "Log format (json or console)")
 
@@ -101,6 +103,10 @@ func (c *Config) GetRedisPassword() string {
 
 func (c *Config) GetRedisClientName() string {
 	return "slv4"
+}
+
+func (c *Config) GetRedisPrefix() string {
+	return c.redisPrefix
 }
 
 func (c *Config) GetServerUrl() string {

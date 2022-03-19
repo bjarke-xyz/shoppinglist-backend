@@ -26,6 +26,12 @@ func UserFromContext(ctx context.Context) *user.AppUser {
 	return nil
 }
 
+func SetContextUser(ctx context.Context, userId string) context.Context {
+	appUser := &user.AppUser{ID: userId}
+	newCtx := context.WithValue(ctx, userContextKey("user"), appUser)
+	return newCtx
+}
+
 func JWTProtected(cfg *config.Config) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -76,9 +82,7 @@ func JWTProtected(cfg *config.Config) mux.MiddlewareFunc {
 				return
 			}
 
-			appUser := &user.AppUser{ID: claims.Subject}
-
-			ctx := context.WithValue(r.Context(), userContextKey("user"), appUser)
+			ctx := SetContextUser(r.Context(), claims.Subject)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 

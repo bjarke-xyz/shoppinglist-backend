@@ -1,6 +1,7 @@
 package router
 
 import (
+	handlers "ShoppingList-Backend/cmd/api/handlers"
 	itemsHandler "ShoppingList-Backend/cmd/api/handlers/items"
 	listsHandler "ShoppingList-Backend/cmd/api/handlers/lists"
 	"ShoppingList-Backend/pkg/application"
@@ -32,7 +33,6 @@ func PrivateRoutes(app *application.Application, r *mux.Router) {
 	items.HandleFunc("/{id}", itemsHandler.DeleteItem(app)).Methods("DELETE")
 
 	// Lists
-
 	lists := apiV1.PathPrefix("/lists").Subrouter()
 	lists.Use(middleware.JWTProtected(app.Cfg))
 
@@ -48,8 +48,12 @@ func PrivateRoutes(app *application.Application, r *mux.Router) {
 
 	// SSE
 	sse := apiV1.PathPrefix("/sse").Subrouter()
-	sse.Use(middleware.JWTProtected(app.Cfg))
-	sse.HandleFunc("/", app.SseBroker.Handle).Methods("GET")
+
+	sseTicket := sse.PathPrefix("/ticket").Subrouter()
+	sseTicket.Use(middleware.JWTProtected(app.Cfg))
+	sseTicket.HandleFunc("/", handlers.CreateSseTicket(app)).Methods("POST")
+
+	sse.HandleFunc("/events", handlers.SseEvents(app)).Methods("GET")
 }
 
 func SwaggerRoute(app *application.Application, r *mux.Router) {

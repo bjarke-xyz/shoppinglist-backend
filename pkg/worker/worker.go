@@ -2,7 +2,9 @@ package worker
 
 import (
 	"ShoppingList-Backend/pkg/application"
+	"ShoppingList-Backend/pkg/config"
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -13,14 +15,17 @@ import (
 	"go.uber.org/zap"
 )
 
-const Namespace = "ShoppingListV4.Worker"
+func GetRedisNamespace(cfg *config.Config) string {
+	namespace := fmt.Sprintf("%v.Worker", cfg.GetRedisPrefix())
+	return namespace
+}
 
 type WorkerContext struct {
 	App *application.Application
 }
 
 func NewWorkerPool(app *application.Application) *work.WorkerPool {
-	pool := work.NewWorkerPool(WorkerContext{}, 10, Namespace, app.Redis)
+	pool := work.NewWorkerPool(WorkerContext{}, 10, GetRedisNamespace(app.Cfg), app.Redis)
 	pool.Middleware((*WorkerContext).Log)
 	pool.Middleware(func(c *WorkerContext, job *work.Job, next work.NextMiddlewareFunc) error {
 		c.App = app

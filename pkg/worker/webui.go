@@ -12,7 +12,7 @@ import (
 )
 
 func NewWebUI(app *application.Application) *webui.Server {
-	server := webui.NewServer(Namespace, app.Redis, app.Cfg.GetWorkerPort())
+	server := webui.NewServer(GetRedisNamespace(app.Cfg), app.Redis, app.Cfg.GetWorkerPort())
 	return server
 }
 
