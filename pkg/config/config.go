@@ -31,6 +31,12 @@ type Config struct {
 	redisPassword string
 	redisPrefix   string
 
+	rabbitmqHost     string
+	rabbitmqPort     string
+	rabbitmqUser     string
+	rabbitmqPassword string
+	rabbitmqVHost    string
+
 	LogFormat string
 
 	Migrate          string
@@ -66,6 +72,12 @@ func New() *Config {
 	flag.StringVar(&conf.redisUser, "redisuser", os.Getenv("REDIS_USER"), "Redis username")
 	flag.StringVar(&conf.redisPassword, "redispassword", os.Getenv("REDIS_PASSWORD"), "Redis password")
 	flag.StringVar(&conf.redisPrefix, "redisprefix", os.Getenv("REDIS_PREFIX"), "Redis key prefix")
+
+	flag.StringVar(&conf.rabbitmqHost, "rabbitmqhost", os.Getenv("RABBITMQ_HOST"), "RabbitMQ host")
+	flag.StringVar(&conf.rabbitmqPort, "rabbitmqport", os.Getenv("RABBITMQ_PORT"), "RabbitMQ port")
+	flag.StringVar(&conf.rabbitmqUser, "rabbitmquser", os.Getenv("RABBITMQ_USER"), "RabbitMQ user")
+	flag.StringVar(&conf.rabbitmqPassword, "rabbitmqpassword", os.Getenv("RABBITMQ_PASSWORD"), "RabbitMQ password")
+	flag.StringVar(&conf.rabbitmqVHost, "rabbitmqvhost", os.Getenv("RABBITMQ_VHOST"), "RabbitMQ vHost")
 
 	flag.StringVar(&conf.LogFormat, "logformat", os.Getenv("LOG_FORMAT"), "Log format (json or console)")
 
@@ -107,6 +119,10 @@ func (c *Config) GetRedisClientName() string {
 
 func (c *Config) GetRedisPrefix() string {
 	return c.redisPrefix
+}
+
+func (c *Config) GetRabbitMqUri() string {
+	return fmt.Sprintf("amqp://%v:%v@%v:%v/%v", c.rabbitmqUser, c.rabbitmqPassword, c.rabbitmqHost, c.rabbitmqPort, c.rabbitmqVHost)
 }
 
 func (c *Config) GetServerUrl() string {

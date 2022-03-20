@@ -138,11 +138,11 @@ func UpdateList(app *application.Application) http.HandlerFunc {
 		}
 
 		app.SseBroker.Notifier <- sse.NewNotification(
-			sse.CreateEvent(sse.BrokerEvent[*list.List]{
-				EventType: list.EventListUpdated,
-				EventData: updatedList,
+			sse.CreateEvent(sse.BrokerEvent{
+				EventType:  list.EventListUpdated,
+				EventData:  updatedList,
+				Recipients: []string{appUser.ID},
 			}),
-			clientFilter([]string{appUser.ID}),
 		)
 
 		app.Srv.Respond(w, r, http.StatusOK, common.Response{
@@ -227,11 +227,11 @@ func AddItemToList(app *application.Application) http.HandlerFunc {
 		}
 
 		app.SseBroker.Notifier <- sse.NewNotification(
-			sse.CreateEvent(sse.BrokerEvent[*list.ListItem]{
-				EventType: list.EventListItemsAdded,
-				EventData: listItem,
+			sse.CreateEvent(sse.BrokerEvent{
+				EventType:  list.EventListItemsAdded,
+				EventData:  listItem,
+				Recipients: []string{user.ID},
 			}),
-			clientFilter([]string{user.ID}),
 		)
 
 		app.Srv.Respond(w, r, http.StatusOK, common.Response{
@@ -287,11 +287,11 @@ func UpdateListItem(app *application.Application) http.HandlerFunc {
 		}
 
 		app.SseBroker.Notifier <- sse.NewNotification(
-			sse.CreateEvent(sse.BrokerEvent[*list.ListItem]{
-				EventType: list.EventListItemsUpdated,
-				EventData: updatedListItem,
+			sse.CreateEvent(sse.BrokerEvent{
+				EventType:  list.EventListItemsUpdated,
+				EventData:  updatedListItem,
+				Recipients: []string{user.ID},
 			}),
-			clientFilter([]string{user.ID}),
 		)
 
 		app.Srv.Respond(w, r, http.StatusOK, common.Response{
@@ -339,11 +339,11 @@ func RemoveItemFromList(app *application.Application) http.HandlerFunc {
 		}
 
 		app.SseBroker.Notifier <- sse.NewNotification(
-			sse.CreateEvent(sse.BrokerEvent[uuid.UUID]{
-				EventType: list.EventListItemsRemoved,
-				EventData: listItemId,
+			sse.CreateEvent(sse.BrokerEvent{
+				EventType:  list.EventListItemsRemoved,
+				EventData:  listItemId,
+				Recipients: []string{user.ID},
 			}),
-			clientFilter([]string{user.ID}),
 		)
 
 		app.Srv.Respond(w, r, http.StatusNoContent, nil)
@@ -380,19 +380,5 @@ func DeleteList(app *application.Application) http.HandlerFunc {
 		}
 
 		app.Srv.Respond(w, r, http.StatusNoContent, nil)
-	}
-}
-
-func clientFilter(allowedUserIds []string) sse.ClientFilter {
-	return func(c *sse.Client) bool {
-		if c.User == nil || len(allowedUserIds) == 0 {
-			return false
-		}
-		for _, userId := range allowedUserIds {
-			if c.User.ID == userId {
-				return true
-			}
-		}
-		return false
 	}
 }

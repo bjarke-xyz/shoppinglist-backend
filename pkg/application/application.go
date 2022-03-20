@@ -7,17 +7,21 @@ import (
 	"ShoppingList-Backend/pkg/db"
 	"ShoppingList-Backend/pkg/server"
 	"ShoppingList-Backend/pkg/sse"
+	"os"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/streadway/amqp"
+	"go.uber.org/zap"
 )
 
 type Application struct {
-	Cfg         *config.Config
-	Queries     *Repositories
-	Controllers *Controllers
-	Redis       *redis.Pool
-	Srv         *server.Server
-	SseBroker   *sse.Broker
+	Cfg                   *config.Config
+	Queries               *Repositories
+	Controllers           *Controllers
+	Redis                 *redis.Pool
+	Srv                   *server.Server
+	SseBroker             *sse.Broker
+	GetRabbitMqConnection func() (*amqp.Connection, error)
 }
 
 func Get(cfg *config.Config) (*Application, error) {
@@ -40,7 +44,7 @@ func Get(cfg *config.Config) (*Application, error) {
 		List: list.NewListController(repos.Item, repos.List),
 	}
 
-	var redisPool = &redis.Pool{
+	redisPool := &redis.Pool{
 		MaxActive: 5,
 		MaxIdle:   5,
 		Wait:      true,
@@ -49,13 +53,40 @@ func Get(cfg *config.Config) (*Application, error) {
 		},
 	}
 
-	sseBroker := sse.NewBroker()
+	rabbitMqConnectionGetter := func() func() (*amqp.Connection, error) {
+
+		connectToRabbitMQ := func() (*amqp.Connection, error) {
+			hostname, err := os.Hostname()
+			if err != nil {
+				zap.S().Error("could not get os.Hostname: %w", err)
+			}
+			conn, err := amqp.DialConfig(cfg.GetRabbitMqUri(), amqp.Config{
+				Properties: amqp.Table{
+					"connection_name": hostname + "-ShoppingList.API",
+				},
+			})
+			return conn, err
+		}
+
+		conn, err := connectToRabbitMQ()
+		return func() (*amqp.Connection, error) {
+			if conn.IsClosed() {
+				conn, err = connectToRabbitMQ()
+			}
+			return conn, err
+		}
+	}
+
+	getRabbitMqConn := rabbitMqConnectionGetter()
+
+	sseBroker := sse.NewBroker(getRabbitMqConn)
 
 	return &Application{
-		Cfg:         cfg,
-		Queries:     repos,
-		Redis:       redisPool,
-		Controllers: controllers,
-		SseBroker:   sseBroker,
+		Cfg:                   cfg,
+		Queries:               repos,
+		Redis:                 redisPool,
+		Controllers:           controllers,
+		SseBroker:             sseBroker,
+		GetRabbitMqConnection: getRabbitMqConn,
 	}, nil
 }
