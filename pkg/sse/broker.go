@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/streadway/amqp"
@@ -66,12 +67,14 @@ func (b *Broker) Handle(w http.ResponseWriter, req *http.Request) {
 	}
 	b.newClients <- client
 	defer func() {
+		zap.S().Info("closingClients WITHOUT CloseNotify")
 		b.closingClients <- client
 	}()
 
 	notify := w.(http.CloseNotifier).CloseNotify()
 	go func() {
 		<-notify
+		zap.S().Info("CloseNotify happened")
 		b.closingClients <- client
 	}()
 
@@ -169,6 +172,22 @@ func (b *Broker) consume(conn *amqp.Connection, queueName string) error {
 				}
 			}
 			// zap.S().Infof("Message received: %s", d.Body)
+		}
+	}()
+
+	pinger := time.NewTicker(1 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-pinger.C:
+				for client := range b.clients {
+					event := &BrokerEvent{
+						EventType: "ping",
+					}
+					eventBytes, _ := json.Marshal(event)
+					client.messageChan <- eventBytes
+				}
+			}
 		}
 	}()
 
