@@ -16,7 +16,7 @@ type ListRepository struct {
 
 func (q *ListRepository) getListItems(listIds []uuid.UUID) ([]ListItem, error) {
 	listItems := []ListItem{}
-	query, args, err := sqlx.In(`SELECT * FROM list_item WHERE list_id IN (?)`, listIds)
+	query, args, err := sqlx.In(`SELECT * FROM list_item WHERE list_id IN (?) ORDER BY updated_at desc`, listIds)
 	if err != nil {
 		return listItems, err
 	}
@@ -227,6 +227,15 @@ func (q *ListRepository) DeleteList(list List) error {
 	return nil
 }
 
+func (q *ListRepository) DeleteCrossedListItems(list List) error {
+	query := `DELETE FROM list_item WHERE list_id = $1 AND crossed = true`
+	_, err := q.DB.Exec(query, list.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (q *ListRepository) GetDefaultList(user *user.AppUser) (DefaultList, error) {
 	fetchQuery := `SELECT * FROM default_lists WHERE app_user_id = $1 LIMIT 1`
 	defaultList := DefaultList{}
@@ -235,6 +244,12 @@ func (q *ListRepository) GetDefaultList(user *user.AppUser) (DefaultList, error)
 		return defaultList, err
 	}
 	return defaultList, nil
+}
+
+func (q *ListRepository) ClearDefaultList(user *user.AppUser) error {
+	query := `DELETE FROM default_lists WHERE app_user_id = $1`
+	_, err := q.DB.Exec(query, user.ID)
+	return err
 }
 
 func (q *ListRepository) SetDefaultList(user *user.AppUser, list List) (DefaultList, error) {

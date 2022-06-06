@@ -6,27 +6,19 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/rs/cors"
 	"go.uber.org/zap"
 )
 
 type Server struct{}
 
-func Start(cfg *config.Config, r *mux.Router) {
+func Start(cfg *config.Config, h http.Handler) {
 
-	handler := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"}, // TODO: Maybe consider not allowing all origins. For now it's fine
-		AllowedHeaders: []string{"Authorization", "Content-Type"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
-		Debug:          false,
-	}).Handler(r)
 	srv := http.Server{
 		Addr:         cfg.GetServerUrl(),
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler:      handler,
+		Handler:      h,
 	}
 
 	zap.S().Infow("Api started", "SERVER_URL", cfg.GetServerUrl())

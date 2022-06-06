@@ -426,6 +426,37 @@ paths:
       summary: set default list
       tags:
       - lists
+  /api/v1/lists/{id}/items/crossed:
+    delete:
+      consumes:
+      - application/json
+      description: Clear crossed list items
+      parameters:
+      - description: List ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ok
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/server.HTTPError'
+      security:
+      - ApiKeyAuth: []
+      summary: Clear crossed list items
+      tags:
+      - lists
   /api/v1/lists/{list-id}/items/{item-id}:
     post:
       consumes:

@@ -5,7 +5,6 @@ import (
 	"ShoppingList-Backend/internal/pkg/list"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/middleware"
-	"ShoppingList-Backend/pkg/sse"
 	"fmt"
 	"net/http"
 
@@ -137,13 +136,13 @@ func UpdateList(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.SseBroker.Notifier <- sse.NewNotification(
-			sse.CreateEvent(sse.BrokerEvent{
-				EventType:  list.EventListUpdated,
-				EventData:  updatedList,
-				Recipients: []string{appUser.ID},
-			}),
-		)
+		// app.SseBroker.Notifier <- sse.NewNotification(
+		// 	sse.CreateEvent(sse.BrokerEvent{
+		// 		EventType:  list.EventListUpdated,
+		// 		EventData:  updatedList,
+		// 		Recipients: []string{appUser.ID},
+		// 	}),
+		// )
 
 		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: updatedList,
@@ -226,13 +225,13 @@ func AddItemToList(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.SseBroker.Notifier <- sse.NewNotification(
-			sse.CreateEvent(sse.BrokerEvent{
-				EventType:  list.EventListItemsAdded,
-				EventData:  listItem,
-				Recipients: []string{user.ID},
-			}),
-		)
+		// app.SseBroker.Notifier <- sse.NewNotification(
+		// 	sse.CreateEvent(sse.BrokerEvent{
+		// 		EventType:  list.EventListItemsAdded,
+		// 		EventData:  listItem,
+		// 		Recipients: []string{user.ID},
+		// 	}),
+		// )
 
 		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: listItem,
@@ -286,13 +285,13 @@ func UpdateListItem(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.SseBroker.Notifier <- sse.NewNotification(
-			sse.CreateEvent(sse.BrokerEvent{
-				EventType:  list.EventListItemsUpdated,
-				EventData:  updatedListItem,
-				Recipients: []string{user.ID},
-			}),
-		)
+		// app.SseBroker.Notifier <- sse.NewNotification(
+		// 	sse.CreateEvent(sse.BrokerEvent{
+		// 		EventType:  list.EventListItemsUpdated,
+		// 		EventData:  updatedListItem,
+		// 		Recipients: []string{user.ID},
+		// 	}),
+		// )
 
 		app.Srv.Respond(w, r, http.StatusOK, common.Response{
 			Data: updatedListItem,
@@ -338,13 +337,13 @@ func RemoveItemFromList(app *application.Application) http.HandlerFunc {
 			return
 		}
 
-		app.SseBroker.Notifier <- sse.NewNotification(
-			sse.CreateEvent(sse.BrokerEvent{
-				EventType:  list.EventListItemsRemoved,
-				EventData:  listItemId,
-				Recipients: []string{user.ID},
-			}),
-		)
+		// app.SseBroker.Notifier <- sse.NewNotification(
+		// 	sse.CreateEvent(sse.BrokerEvent{
+		// 		EventType:  list.EventListItemsRemoved,
+		// 		EventData:  listItemId,
+		// 		Recipients: []string{user.ID},
+		// 	}),
+		// )
 
 		app.Srv.Respond(w, r, http.StatusNoContent, nil)
 	}
@@ -375,6 +374,39 @@ func DeleteList(app *application.Application) http.HandlerFunc {
 		user := middleware.UserFromContext(r.Context())
 
 		if cErr := app.Controllers.List.DeleteList(user, id); cErr != nil {
+			app.Srv.RespondError(w, r, cErr.StatusCode, cErr.Err)
+			return
+		}
+
+		app.Srv.Respond(w, r, http.StatusNoContent, nil)
+	}
+}
+
+// ClearCrossedListItems func Clear crossed list items
+// @Description Clear crossed list items
+// @Summary Clear crossed list items
+// @Tags lists
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "List ID"
+// @Success 204 {string} status "ok"
+// @Failure 500 {object} server.HTTPError
+// @Failure 400 {object} server.HTTPError
+// @Router /api/v1/lists/{id}/items/crossed [delete]
+func ClearCrossedListItems(app *application.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		idStr := params["id"]
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			app.Srv.RespondError(w, r, http.StatusBadRequest, fmt.Errorf("could not parse id %v: %w", idStr, err))
+			return
+		}
+
+		user := middleware.UserFromContext(r.Context())
+
+		if cErr := app.Controllers.List.DeleteCrossedListItems(user, id); cErr != nil {
 			app.Srv.RespondError(w, r, cErr.StatusCode, cErr.Err)
 			return
 		}

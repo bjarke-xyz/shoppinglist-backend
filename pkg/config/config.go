@@ -101,6 +101,14 @@ func (c *Config) GetDBConnStr() string {
 	)
 }
 
+func (c *Config) GetRedisHost() string {
+	return c.redisHost
+}
+
+func (c *Config) GetRedisPort() string {
+	return c.redisPort
+}
+
 func (c *Config) GetRedisConnStr() string {
 	return fmt.Sprintf("%s:%s", c.redisHost, c.redisPort)
 }

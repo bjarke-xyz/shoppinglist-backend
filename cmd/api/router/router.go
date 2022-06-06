@@ -1,14 +1,15 @@
 package router
 
 import (
-	handlers "ShoppingList-Backend/cmd/api/handlers"
 	itemsHandler "ShoppingList-Backend/cmd/api/handlers/items"
 	listsHandler "ShoppingList-Backend/cmd/api/handlers/lists"
 	"ShoppingList-Backend/pkg/application"
 	"ShoppingList-Backend/pkg/middleware"
 	"net/http"
 
+	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 
 	// http-swagger middleware
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -17,12 +18,21 @@ import (
 	_ "ShoppingList-Backend/api"
 )
 
+func SocketIoRoutes(app *application.Application, r *mux.Router) {
+	app.SocketIo.OnConnect("/", func(c socketio.Conn) error {
+		c.SetContext("")
+		zap.S().Infow("connected:", "id", c.ID())
+		return nil
+	})
+	app.SocketIo.OnEvent("/", "message", func(s socketio.Conn, msg string) {
+		zap.S().Infow("message", "msg", msg)
+		s.Emit("reply", "have "+msg)
+	})
+	r.HandleFunc("/socket.io/", app.SocketIo.ServeHTTP)
+}
+
 func PrivateRoutes(app *application.Application, r *mux.Router) {
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
-
-	// loggerMiddleware := middleware.NewZapLogger(middleware.Config{RedactedQueryParams: []string{"Authorization"}})
-
-	apiV1.Use(middleware.NewZapLogger(middleware.Config{RedactedQueryParams: []string{"Authorization"}}))
 
 	// Items
 	items := apiV1.PathPrefix("/items").Subrouter()
@@ -42,18 +52,19 @@ func PrivateRoutes(app *application.Application, r *mux.Router) {
 	lists.HandleFunc("/{id}", listsHandler.UpdateList(app)).Methods("PUT")
 	lists.HandleFunc("/{id}/default", listsHandler.SetDefaultList(app)).Methods("PUT")
 	lists.HandleFunc("/{id}", listsHandler.DeleteList(app)).Methods("DELETE")
+	lists.HandleFunc("/{id}/items/crossed", listsHandler.ClearCrossedListItems(app)).Methods("DELETE")
 	lists.HandleFunc("/{id}/items/{itemId}", listsHandler.AddItemToList(app)).Methods("POST")
 	lists.HandleFunc("/{id}/items/{listItemId}", listsHandler.UpdateListItem(app)).Methods("PUT")
 	lists.HandleFunc("/{id}/items/{listItemId}", listsHandler.RemoveItemFromList(app)).Methods("DELETE")
 
-	// SSE
-	sse := apiV1.PathPrefix("/sse").Subrouter()
+	// // SSE
+	// sse := apiV1.PathPrefix("/sse").Subrouter()
 
-	sseTicket := sse.PathPrefix("/ticket").Subrouter()
-	sseTicket.Use(middleware.JWTProtected(app.Cfg))
-	sseTicket.HandleFunc("/", handlers.CreateSseTicket(app)).Methods("POST")
+	// sseTicket := sse.PathPrefix("/ticket").Subrouter()
+	// sseTicket.Use(middleware.JWTProtected(app.Cfg))
+	// sseTicket.HandleFunc("/", handlers.CreateSseTicket(app)).Methods("POST")
 
-	sse.HandleFunc("/events", handlers.SseEvents(app)).Methods("GET")
+	// sse.HandleFunc("/events", handlers.SseEvents(app)).Methods("GET")
 }
 
 func SwaggerRoute(app *application.Application, r *mux.Router) {

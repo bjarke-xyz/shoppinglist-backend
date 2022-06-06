@@ -11,6 +11,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
+	"github.com/urfave/negroni"
 	"go.uber.org/zap"
 )
 
@@ -34,7 +36,7 @@ func main() {
 
 	app, err := application.Get(cfg)
 	if err != nil {
-		zap.S().Fatalf("Database error: %v", err)
+		zap.S().Fatalf("Application setup error: %v", err)
 	}
 
 	if cfg.MigrateOnStartup {
@@ -43,8 +45,20 @@ func main() {
 
 	r := mux.NewRouter().StrictSlash(true)
 
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"}, // TODO: Maybe consider not allowing all origins. For now it's fine
+		AllowedHeaders: []string{"Authorization", "Content-Type"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		Debug:          false,
+	})
+	n := negroni.New(corsMiddleware, negroni.NewRecovery(), negroni.NewLogger())
+
+	n.UseHandler(r)
+
 	router.SwaggerRoute(app, r)
 	router.PrivateRoutes(app, r)
+	router.SocketIoRoutes(app, r)
 
-	server.Start(app.Cfg, r)
+	go app.SocketIo.Serve()
+	server.Start(app.Cfg, n)
 }

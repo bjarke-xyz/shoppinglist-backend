@@ -158,5 +158,30 @@ func (c *ListController) DeleteList(user *user.AppUser, listID uuid.UUID) *contr
 		return controller.CError(http.StatusInternalServerError, fmt.Errorf("could not delete list (%v): %w", listID, err))
 	}
 
+	defaultList, err := c.listRepo.GetDefaultList(user)
+	if err != nil {
+		return controller.CError(http.StatusInternalServerError, fmt.Errorf("could not get default list: %w", err))
+	}
+
+	if defaultList.ListID == foundList.ID {
+		err = c.listRepo.ClearDefaultList(user)
+		if err != nil {
+			return controller.CError(http.StatusInternalServerError, fmt.Errorf("could not clear default list: %w", err))
+		}
+	}
+
+	return nil
+}
+
+func (c *ListController) DeleteCrossedListItems(user *user.AppUser, listID uuid.UUID) *controller.ControllerError {
+	foundList, err := c.listRepo.GetList(listID, user)
+	if err != nil {
+		return controller.CError(http.StatusNotFound, fmt.Errorf("list with ID %v not found: %w", listID, err))
+	}
+
+	if err := c.listRepo.DeleteCrossedListItems(foundList); err != nil {
+		return controller.CError(http.StatusInternalServerError, fmt.Errorf("could not delete crossed list items (%v): %w", listID, err))
+	}
+
 	return nil
 }
